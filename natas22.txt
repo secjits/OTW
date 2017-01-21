@@ -1,0 +1,1 @@
+add ?revelio to url, see response in Burp because get redirected to blank page if $_SESSION["admin"] == 1
