@@ -1,0 +1,4 @@
+passwd must contain 'iloveyou' and cast to an int >10
+strings cast to int only the head ints; exceptions for '.' 'e' 'E' since they are used for scientific notation.
+
+http://natas23.natas.labs.overthewire.org/?passwd=11iloveyou
