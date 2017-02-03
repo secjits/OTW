@@ -1,0 +1,98 @@
+Looking at the source provided, it's obvious this is going to be another directory traversal combined with some php injection.
+
+Usual course of action is going to be:
+  1) find a location which is readable
+  2) write some php in that location
+  3) browse to location to execute the code and display the password to the next level
+  
+I will walk through the obstacles I ran into to solve this first.
+
+Below are snippets of source code that caught my eye off the bat (with a few comments):
+
+<?php
+    [...TRUNCATED...]
+    
+    function showImage($filename){
+        if(file_exists($filename))
+            echo "<img src=\"$filename\">";                             //READ PHPSESSID->filename
+    }
+
+    function drawImage($filename){
+        $img=imagecreatetruecolor(400,300);
+        drawFromUserdata($img);
+        imagepng($img,$filename);                                       //WRITE get params->image content
+        imagedestroy($img);                                             
+    }
+    
+    [...TRUNCATED...]
+    
+    session_start();
+    if (array_key_exists("drawing", $_COOKIE) ||
+        (   array_key_exists("x1", $_GET) && array_key_exists("y1", $_GET) &&
+            array_key_exists("x2", $_GET) && array_key_exists("y2", $_GET))){
+        $imgfile="img/natas26_" . session_id() .".png";                       //READABLE LOCATION img/filename
+        drawImage($imgfile);
+        showImage($imgfile);
+        storeData();
+    }
+?>
+
+So it looks like the x1 x2 y1 y2 parameters are unsanitized, and get written to a readable location.
+I try injecting <?php passthru('cat /etc/natas_webpass/natas27') ?> into one of the parameters. 
+Then I access the image location in the browser; no output... I guess the injected php can't run from within a .png here
+
+OK let's look at another portion of the code:
+
+<?php
+    class Logger{                                                       //never called... hmmm...
+        private $logFile;
+        private $initMsg;
+        private $exitMsg;
+
+        function __construct($file){
+            // initialise variables
+            $this->initMsg="#--session started--#\n";                   //controls file content
+            $this->exitMsg="#--session end--#\n";
+            $this->logFile = "/tmp/natas26_" . $file . ".log";          //controls file name
+
+            // write initial message
+            $fd=fopen($this->logFile,"a+");
+            fwrite($fd,$initMsg);                                       //write content
+            fclose($fd);
+        }
+[...TRUNCATED...]
+    }
+[...TRUNCATED...]
+    function storeData(){
+        $new_object=array();
+
+        if(array_key_exists("x1", $_GET) && array_key_exists("y1", $_GET) &&
+            array_key_exists("x2", $_GET) && array_key_exists("y2", $_GET)){
+            $new_object["x1"]=$_GET["x1"];
+            $new_object["y1"]=$_GET["y1"];
+            $new_object["x2"]=$_GET["x2"];
+            $new_object["y2"]=$_GET["y2"];
+        }
+
+        if (array_key_exists("drawing", $_COOKIE)){
+            $drawing=unserialize(base64_decode($_COOKIE["drawing"]));           //Creates php object, we control $_COOKIE
+        }
+        else{
+            // create new array
+            $drawing=array();
+        }
+
+        $drawing[]=$new_object;
+        setcookie("drawing",base64_encode(serialize($drawing)));
+    }
+[...TRUNCATED...]
+?>
+
+The unserialize function will create a php object server side (juicy!) AND we get to write to an arbitrary location thanks to the Logger class.
+All we have to do is change the $_COOKIES["drawing"] value to make $drawing a Logger object after these server-side transformations:
+- decode from url 
+- decode base64
+- unserialize
+
+So we have to run a bit of php locally to get the encoded string we want.
+See natas26.php for solution
