@@ -1,0 +1,22 @@
+What we want:
+The password for the next level stored (hopefully) in the row satisfying username=natas28 
+
+What we know:
+1) Database gets cleared every 5 min 
+2) Fields are described as follows:
+
+CREATE TABLE `users` (
+  `username` varchar(64) DEFAULT NULL,
+  `password` varchar(64) DEFAULT NULL
+);
+
+3) All inputs are sanitized with mysql_real_escape_string() so SQLi is going to be difficult, no brute forcing the creds with LIKE :(
+4) The dumpData function will display all (username,password) pairs for a given username. Nice!
+5) If a user doesn't exist it will be created with the password provided. Nicer!
+
+Strategy:
+Every 5 minutes the db will get cleared, and presumably the admin/natas28 will have to be created by the server for the admin to log back in.
+Let's try sending the following request over and over until it hits the time where admin/natas28 has not been created yet.
+  http://natas27.natas.labs.overthewire.org/?username=natas28&password=AAAAA
+I started with natas28 because of previous challenges.
+Success! See natas27.py in this repo for the code.
