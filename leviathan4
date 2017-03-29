@@ -1,0 +1,27 @@
+This one is barely worth writting about... Here we go for consistency purposes!
+
+leviathan4@melinda:~$ ls -al
+total 24
+drwxr-xr-x   3 root root       4096 Nov 14  2014 .
+drwxr-xr-x 172 root root       4096 Jul 10  2016 ..
+-rw-r--r--   1 root root        220 Apr  9  2014 .bash_logout
+-rw-r--r--   1 root root       3637 Apr  9  2014 .bashrc
+-rw-r--r--   1 root root        675 Apr  9  2014 .profile
+dr-xr-x---   2 root leviathan4 4096 Nov 14  2014 .trash
+leviathan4@melinda:~$ cd .trash/
+leviathan4@melinda:~/.trash$ ls
+bin
+leviathan4@melinda:~/.trash$ ls -al
+total 16
+dr-xr-x--- 2 root       leviathan4 4096 Nov 14  2014 .
+drwxr-xr-x 3 root       root       4096 Nov 14  2014 ..
+-r-sr-x--- 1 leviathan5 leviathan4 7425 Nov 14  2014 bin
+leviathan4@melinda:~/.trash$ ./bin 
+01010100 01101001 01110100 01101000 00110100 01100011 01101111 01101011 01100101 01101001 00001010 
+leviathan4@melinda:~/.trash$ ltrace ./bin 
+__libc_start_main(0x80484cd, 1, 0xffffd784, 0x80485c0 <unfinished ...>
+fopen("/etc/leviathan_pass/leviathan5", "r")                                                           = 0
++++ exited (status 255) +++
+
+So we see fopen() on the password file, good.
+We convert the binary output to ASCII, and voila!
