@@ -1,2 +1,2 @@
 # OTW
-overthewire.org wargame solutions
+overthewire.org wargame write ups
