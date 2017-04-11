@@ -1,0 +1,40 @@
+======================== What do we have here ====================
+leviathan6@melinda:/home/leviathan6$ ls
+leviathan6
+leviathan6@melinda:/home/leviathan6$ ./leviathan6 
+usage: ./leviathan6 <4 digit code>
+leviathan6@melinda:/home/leviathan6$ ./leviathan6 1234
+Wrong
+leviathan6@melinda:/home/leviathan6$ ltrace ./leviathan6 1234
+__libc_start_main(0x804850d, 2, 0xffffd764, 0x8048590 <unfinished ...>
+atoi(0xffffd8a3, 0xffffd764, 0xffffd770, 0xf7e5619d) = 1234
+puts("Wrong"Wrong
+)                                    = 6
++++ exited (status 6) +++
+=================== Researched atoi() in that format =================
+Nothing interesting came of that search.... I guess I can brute force a 
+4 digit code in no time. Here's a simple for loop:
+
+#/bin/bash
+for i in {0000..9999}; do
+    /home/leviathan6/leviathan6 $i
+done
+
+=================== Script output ===================================
+[... many more Wrongs ...]
+Wrong
+Wrong
+Wrong
+Wrong
+Wrong
+Wrong
+Wrong
+Wrong
+Wrong
+$ 
+================ Oh check it out we have a shell!!! ===================
+$ whoami
+leviathan7
+$ cat /etc/leviathan_pass/leviathan7
+[spoiler output :P]
+
