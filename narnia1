@@ -1,0 +1,50 @@
+ok, let's see what we have here
+
+narnia1@melinda:~$ cat /narnia/narnia1.c
+#include <stdio.h>
+
+int main(){
+	int (*ret)();
+
+	if(getenv("EGG")==NULL){    
+		printf("Give me something to execute at the env-variable EGG\n");
+		exit(1);
+	}
+
+	printf("Trying to execute EGG!\n");
+	ret = getenv("EGG");
+	ret();
+
+	return 0;
+}
+
+====================================================================================
+so narnia1.c will take the EGG env variable as input. Easiest way to write EGG is with export
+
+narnia1@melinda:~$ export EGG=whoami
+narnia1@melinda:~$ env
+[...stuff...]
+EGG=whoami
+[...stuff...]
+narnia1@melinda:~$ /narnia/narnia1
+Trying to execute EGG!
+Segmentation fault
+
+I guess that was too much to ask for ;) Let's try something else:
+
+narnia1@melinda:~$ export EGG=A
+narnia1@melinda:~$ /narnia/narnia1
+Trying to execute EGG!
+Segmentation fault
+narnia1@melinda:~$ export EGG=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+narnia1@melinda:~$ /narnia/narnia1
+Trying to execute EGG!
+Segmentation fault
+
+Alright so I'm going to assume that the seg fault isn't due to the length of EGG
+
+=====================================================================================
+Now I have 2 options as far as I can tell before I start debugging:
+1) Test if seg fault occurs with EGG set to whoami's absolute path
+2) Test if seg fault occurs with EGG contains shell code
+
