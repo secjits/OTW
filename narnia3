@@ -43,6 +43,12 @@ int main(int argc, char **argv){
 }
 
 ================== TESTING ======================
+narnia3@narnia:/tmp/nar3$ vim AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+narnia3@narnia:/tmp/nar3$ /narnia/narnia3 /tmp/nar3/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+error opening AAAAAAAAAA
+narnia3@narnia:/tmp/nar3$ vim AAAAAAAAAA
+narnia3@narnia:/tmp/nar3$ /narnia/narnia3 /tmp/nar3/AAAAAAAAAA                      
+copied contents of /tmp/nar3/AAAAAAAAAA to a safer place... (/dev/null)
 
 Created two files:
 /tmp/nar3/AAAAAAAAAA (A*10) & /tmp/nar3/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA (A*32)
