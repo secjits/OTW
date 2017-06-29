@@ -63,3 +63,33 @@ Program received signal SIGSEGV, Segmentation fault.
 
 Nice! Now, where to point?
 
+Let's see where this is actually happening, after a bit of fiddling with gdb we get this:
+0x08048558 in get_sp ()
+(gdb) 
+0x08048697 in main ()
+(gdb) 
+0x08048699 in main ()
+(gdb) 
+0x080486a7 in main ()
+(gdb) 
+0x080486ab in main ()
+(gdb) 
+0x080486ae in main ()
+(gdb) 
+0x080486b2 in main ()
+(gdb) 
+0x41414141 in ?? ()
+(gdb) 
+
+Corresponds to this:
+
+ 8048692:	e8 b6 fe ff ff       	call   804854d <get_sp>
+ 8048697:	39 c3                	cmp    %eax,%ebx
+ 8048699:	75 0c                	jne    80486a7 <main+0x14e>
+ 804869b:	c7 04 24 ff ff ff ff 	movl   $0xffffffff,(%esp)
+ 80486a2:	e8 69 fd ff ff       	call   8048410 <exit@plt>
+ 80486a7:	8d 44 24 20          	lea    0x20(%esp),%eax
+ 80486ab:	89 04 24             	mov    %eax,(%esp)
+ 80486ae:	8b 44 24 28          	mov    0x28(%esp),%eax
+ 80486b2:	ff d0                	call   *%eax
+
