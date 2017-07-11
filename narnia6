@@ -173,4 +173,4 @@ Continuing.
 Program received signal SIGSEGV, Segmentation fault.
 0x42424242 in ?? ()
 
-Now I have to figure out how to trick the get_sp() function into letting me through.
+Now I have to figure out how to trick the get_sp() function into letting me through.... or throw the shellcode into and address space not starting with ff.
