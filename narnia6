@@ -174,3 +174,80 @@ Program received signal SIGSEGV, Segmentation fault.
 0x42424242 in ?? ()
 
 Now I have to figure out how to trick the get_sp() function into letting me through.... or throw the shellcode into and address space not starting with ff.
+
+========================== Address Space =============================
+Trying to figure out where to put this shell.... let's see what's in /proc/$pid/maps
+
+narnia6@narnia:/proc/488$ cat maps
+00400000-00962000 r-xp 00000000 00:112 772                               /usr/bin/gdb
+00b61000-00b62000 r--p 00561000 00:112 772                               /usr/bin/gdb
+00b62000-00b75000 rw-p 00562000 00:112 772                               /usr/bin/gdb
+00b75000-00df0000 rw-p 00000000 00:00 0                                  [heap]
+7ffff5bfb000-7ffff5c3b000 rw-p 00000000 00:00 0 
+7ffff5c7b000-7ffff5dbb000 rw-p 00000000 00:00 0 
+7ffff5dbb000-7ffff5dbd000 r-xp 00000000 00:112 80                        /lib/x86_64-linux-gnu/libutil-2.19.so
+7ffff5dbd000-7ffff5fbc000 ---p 00002000 00:112 80                        /lib/x86_64-linux-gnu/libutil-2.19.so
+7ffff5fbc000-7ffff5fbd000 r--p 00001000 00:112 80                        /lib/x86_64-linux-gnu/libutil-2.19.so
+7ffff5fbd000-7ffff5fbe000 rw-p 00002000 00:112 80                        /lib/x86_64-linux-gnu/libutil-2.19.so
+7ffff5fbe000-7ffff617c000 r-xp 00000000 00:112 31                        /lib/x86_64-linux-gnu/libc-2.19.so
+7ffff617c000-7ffff637b000 ---p 001be000 00:112 31                        /lib/x86_64-linux-gnu/libc-2.19.so
+7ffff637b000-7ffff637f000 r--p 001bd000 00:112 31                        /lib/x86_64-linux-gnu/libc-2.19.so
+7ffff637f000-7ffff6381000 rw-p 001c1000 00:112 31                        /lib/x86_64-linux-gnu/libc-2.19.so
+7ffff6381000-7ffff6386000 rw-p 00000000 00:00 0 
+7ffff6386000-7ffff63a7000 r-xp 00000000 00:112 2205                      /lib/x86_64-linux-gnu/liblzma.so.5.0.0
+7ffff63a7000-7ffff65a6000 ---p 00021000 00:112 2205                      /lib/x86_64-linux-gnu/liblzma.so.5.0.0
+7ffff65a6000-7ffff65a7000 r--p 00020000 00:112 2205                      /lib/x86_64-linux-gnu/liblzma.so.5.0.0
+7ffff65a7000-7ffff65a8000 rw-p 00021000 00:112 2205                      /lib/x86_64-linux-gnu/liblzma.so.5.0.0
+7ffff65a8000-7ffff65cf000 r-xp 00000000 00:112 1884                      /lib/x86_64-linux-gnu/libexpat.so.1.6.0
+7ffff65cf000-7ffff67cf000 ---p 00027000 00:112 1884                      /lib/x86_64-linux-gnu/libexpat.so.1.6.0
+7ffff67cf000-7ffff67d1000 r--p 00027000 00:112 1884                      /lib/x86_64-linux-gnu/libexpat.so.1.6.0
+7ffff67d1000-7ffff67d2000 rw-p 00029000 00:112 1884                      /lib/x86_64-linux-gnu/libexpat.so.1.6.0
+7ffff67d2000-7ffff6b5e000 r-xp 00000000 00:112 2203                      /usr/lib/x86_64-linux-gnu/libpython3.4m.so.1.0
+7ffff6b5e000-7ffff6d5d000 ---p 0038c000 00:112 2203                      /usr/lib/x86_64-linux-gnu/libpython3.4m.so.1.0
+7ffff6d5d000-7ffff6d5f000 r--p 0038b000 00:112 2203                      /usr/lib/x86_64-linux-gnu/libpython3.4m.so.1.0
+7ffff6d5f000-7ffff6deb000 rw-p 0038d000 00:112 2203                      /usr/lib/x86_64-linux-gnu/libpython3.4m.so.1.0
+7ffff6deb000-7ffff6e07000 rw-p 00000000 00:00 0 
+7ffff6e07000-7ffff6e20000 r-xp 00000000 00:112 78                        /lib/x86_64-linux-gnu/libpthread-2.19.so
+7ffff6e20000-7ffff701f000 ---p 00019000 00:112 78                        /lib/x86_64-linux-gnu/libpthread-2.19.so
+7ffff701f000-7ffff7020000 r--p 00018000 00:112 78                        /lib/x86_64-linux-gnu/libpthread-2.19.so
+7ffff7020000-7ffff7021000 rw-p 00019000 00:112 78                        /lib/x86_64-linux-gnu/libpthread-2.19.so
+7ffff7021000-7ffff7025000 rw-p 00000000 00:00 0 
+7ffff7025000-7ffff712a000 r-xp 00000000 00:112 84                        /lib/x86_64-linux-gnu/libm-2.19.so
+7ffff712a000-7ffff7329000 ---p 00105000 00:112 84                        /lib/x86_64-linux-gnu/libm-2.19.so
+7ffff7329000-7ffff732a000 r--p 00104000 00:112 84                        /lib/x86_64-linux-gnu/libm-2.19.so
+7ffff732a000-7ffff732b000 rw-p 00105000 00:112 84                        /lib/x86_64-linux-gnu/libm-2.19.so
+7ffff732b000-7ffff7343000 r-xp 00000000 00:112 82                        /lib/x86_64-linux-gnu/libz.so.1.2.8
+7ffff7343000-7ffff7542000 ---p 00018000 00:112 82                        /lib/x86_64-linux-gnu/libz.so.1.2.8
+7ffff7542000-7ffff7543000 r--p 00017000 00:112 82                        /lib/x86_64-linux-gnu/libz.so.1.2.8
+7ffff7543000-7ffff7544000 rw-p 00018000 00:112 82                        /lib/x86_64-linux-gnu/libz.so.1.2.8
+7ffff7544000-7ffff7569000 r-xp 00000000 00:112 36                        /lib/x86_64-linux-gnu/libtinfo.so.5.9
+7ffff7569000-7ffff7768000 ---p 00025000 00:112 36                        /lib/x86_64-linux-gnu/libtinfo.so.5.9
+7ffff7768000-7ffff776c000 r--p 00024000 00:112 36                        /lib/x86_64-linux-gnu/libtinfo.so.5.9
+7ffff776c000-7ffff776d000 rw-p 00028000 00:112 36                        /lib/x86_64-linux-gnu/libtinfo.so.5.9
+7ffff776d000-7ffff778f000 r-xp 00000000 00:112 2202                      /lib/x86_64-linux-gnu/libncurses.so.5.9
+7ffff778f000-7ffff798e000 ---p 00022000 00:112 2202                      /lib/x86_64-linux-gnu/libncurses.so.5.9
+7ffff798e000-7ffff798f000 r--p 00021000 00:112 2202                      /lib/x86_64-linux-gnu/libncurses.so.5.9
+7ffff798f000-7ffff7990000 rw-p 00022000 00:112 2202                      /lib/x86_64-linux-gnu/libncurses.so.5.9
+7ffff7990000-7ffff7993000 r-xp 00000000 00:112 38                        /lib/x86_64-linux-gnu/libdl-2.19.so
+7ffff7993000-7ffff7b92000 ---p 00003000 00:112 38                        /lib/x86_64-linux-gnu/libdl-2.19.so
+7ffff7b92000-7ffff7b93000 r--p 00002000 00:112 38                        /lib/x86_64-linux-gnu/libdl-2.19.so
+7ffff7b93000-7ffff7b94000 rw-p 00003000 00:112 38                        /lib/x86_64-linux-gnu/libdl-2.19.so
+7ffff7b94000-7ffff7bd1000 r-xp 00000000 00:112 2200                      /lib/x86_64-linux-gnu/libreadline.so.6.3
+7ffff7bd1000-7ffff7dd1000 ---p 0003d000 00:112 2200                      /lib/x86_64-linux-gnu/libreadline.so.6.3
+7ffff7dd1000-7ffff7dd3000 r--p 0003d000 00:112 2200                      /lib/x86_64-linux-gnu/libreadline.so.6.3
+7ffff7dd3000-7ffff7dd9000 rw-p 0003f000 00:112 2200                      /lib/x86_64-linux-gnu/libreadline.so.6.3
+7ffff7dd9000-7ffff7dda000 rw-p 00000000 00:00 0 
+7ffff7dda000-7ffff7dfd000 r-xp 00000000 00:112 28                        /lib/x86_64-linux-gnu/ld-2.19.so
+7ffff7e37000-7ffff7fef000 rw-p 00000000 00:00 0 
+7ffff7ff4000-7ffff7ff8000 rw-p 00000000 00:00 0 
+7ffff7ff8000-7ffff7ffa000 r--p 00000000 00:00 0                          [vvar]
+7ffff7ffa000-7ffff7ffc000 r-xp 00000000 00:00 0                          [vdso]
+7ffff7ffc000-7ffff7ffd000 r--p 00022000 00:112 28                        /lib/x86_64-linux-gnu/ld-2.19.so
+7ffff7ffd000-7ffff7ffe000 rw-p 00023000 00:112 28                        /lib/x86_64-linux-gnu/ld-2.19.so
+7ffff7ffe000-7ffff7fff000 rw-p 00000000 00:00 0 
+7ffffffde000-7ffffffff000 rw-p 00000000 00:00 0                          [stack]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+
+So the only space not starting with ff which is not gdb is:
+00b75000-00df0000 rw-p 00000000 00:00 0                                  [heap]
+
