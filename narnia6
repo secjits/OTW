@@ -193,3 +193,10 @@ f7fdc000-f7ffc000 r-xp 00000000 00:3b 2644                               /lib32/
 f7ffc000-f7ffd000 r--p 0001f000 00:3b 2644                               /lib32/ld-2.19.so
 f7ffd000-f7ffe000 rw-p 00020000 00:3b 2644                               /lib32/ld-2.19.so
 fffdd000-ffffe000 rw-p 00000000 00:00 0                                  [stack]
+
+Executable memory:
+
+08048000-08049000 r-xp 00000000 00:3b 2640                               /narnia/narnia6
+f7e23000-f7fca000 r-xp 00000000 00:3b 2649                               /lib32/libc-2.19.so
+f7fdb000-f7fdc000 r-xp 00000000 00:00 0                                  [vdso]
+f7fdc000-f7ffc000 r-xp 00000000 00:3b 2644                               /lib32/ld-2.19.so
