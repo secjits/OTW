@@ -61,42 +61,43 @@ narnia7@narnia:~$ gdb /narnia/narnia7
 
 (gdb) disas vuln
 Dump of assembler code for function vuln:
-   0x080485cd <+0>:	push   %ebp
-   0x080485ce <+1>:	mov    %esp,%ebp
-   0x080485d0 <+3>:	sub    $0xa8,%esp
-   0x080485d6 <+9>:	movl   $0x80,0x8(%esp)
-   0x080485de <+17>:	movl   $0x0,0x4(%esp)
-   0x080485e6 <+25>:	lea    -0x88(%ebp),%eax
-   0x080485ec <+31>:	mov    %eax,(%esp)
+   0x080485cd <+0>:	push   ebp
+   0x080485ce <+1>:	mov    ebp,esp
+   0x080485d0 <+3>:	sub    esp,0xa8
+   0x080485d6 <+9>:	mov    DWORD PTR [esp+0x8],0x80
+   0x080485de <+17>:	mov    DWORD PTR [esp+0x4],0x0
+   0x080485e6 <+25>:	lea    eax,[ebp-0x88]
+   0x080485ec <+31>:	mov    DWORD PTR [esp],eax
    0x080485ef <+34>:	call   0x80484b0 <memset@plt>
-   0x080485f4 <+39>:	movl   $0x80486e0,0x4(%esp)
-   0x080485fc <+47>:	movl   $0x80487d0,(%esp)
+   0x080485f4 <+39>:	mov    DWORD PTR [esp+0x4],0x80486e0
+   0x080485fc <+47>:	mov    DWORD PTR [esp],0x80487d0
    0x08048603 <+54>:	call   0x8048420 <printf@plt>
-   0x08048608 <+59>:	movl   $0x8048706,0x4(%esp)
-   0x08048610 <+67>:	movl   $0x80487e5,(%esp)
+   0x08048608 <+59>:	mov    DWORD PTR [esp+0x4],0x8048706
+   0x08048610 <+67>:	mov    DWORD PTR [esp],0x80487e5
    0x08048617 <+74>:	call   0x8048420 <printf@plt>
-   0x0804861c <+79>:	movl   $0x80486e0,-0x8c(%ebp)
-   0x08048626 <+89>:	mov    -0x8c(%ebp),%eax
-   0x0804862c <+95>:	lea    -0x8c(%ebp),%edx
-   0x08048632 <+101>:	mov    %edx,0x8(%esp)
-   0x08048636 <+105>:	mov    %eax,0x4(%esp)
-   0x0804863a <+109>:	movl   $0x80487fd,(%esp)
+   0x0804861c <+79>:	mov    DWORD PTR [ebp-0x8c],0x80486e0
+   0x08048626 <+89>:	mov    eax,DWORD PTR [ebp-0x8c]
+   0x0804862c <+95>:	lea    edx,[ebp-0x8c]
+   0x08048632 <+101>:	mov    DWORD PTR [esp+0x8],edx
+   0x08048636 <+105>:	mov    DWORD PTR [esp+0x4],eax
+   0x0804863a <+109>:	mov    DWORD PTR [esp],0x80487fd
    0x08048641 <+116>:	call   0x8048420 <printf@plt>
-   0x08048646 <+121>:	movl   $0x8048818,(%esp)
+   0x08048646 <+121>:	mov    DWORD PTR [esp],0x8048818
    0x0804864d <+128>:	call   0x8048450 <puts@plt>
-   0x08048652 <+133>:	movl   $0x2,(%esp)
+   0x08048652 <+133>:	mov    DWORD PTR [esp],0x2
    0x08048659 <+140>:	call   0x8048440 <sleep@plt>
-   0x0804865e <+145>:	movl   $0x80486e0,-0x8c(%ebp)
-   0x08048668 <+155>:	mov    0x8(%ebp),%eax
-   0x0804866b <+158>:	mov    %eax,0x8(%esp)
-   0x0804866f <+162>:	movl   $0x80,0x4(%esp)
-   0x08048677 <+170>:	lea    -0x88(%ebp),%eax
-   0x0804867d <+176>:	mov    %eax,(%esp)
+   0x0804865e <+145>:	mov    DWORD PTR [ebp-0x8c],0x80486e0
+   0x08048668 <+155>:	mov    eax,DWORD PTR [ebp+0x8]
+   0x0804866b <+158>:	mov    DWORD PTR [esp+0x8],eax
+   0x0804866f <+162>:	mov    DWORD PTR [esp+0x4],0x80
+   0x08048677 <+170>:	lea    eax,[ebp-0x88]
+   0x0804867d <+176>:	mov    DWORD PTR [esp],eax
    0x08048680 <+179>:	call   0x80484c0 <snprintf@plt>
-   0x08048685 <+184>:	mov    -0x8c(%ebp),%eax
-   0x0804868b <+190>:	call   *%eax
+   0x08048685 <+184>:	mov    eax,DWORD PTR [ebp-0x8c]
+   0x0804868b <+190>:	call   eax
    0x0804868d <+192>:	leave  
    0x0804868e <+193>:	ret    
+
 End of assembler dump.
 (gdb) b *0x08048685
 Breakpoint 1 at 0x8048685
