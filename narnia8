@@ -163,3 +163,61 @@ Breakpoint 1, 0x080484a7 in func ()
 0xffffd930:	0x34332031	0x20303133	0x53003232	0x545f4853
 
 Ok so *0xffffd6ec is 0xffffd8e3, which is the address of the As in the previous stack frame... interesting
+
+=================== SEG FAULT?!? =============================================
+With a bit more fiddling around I managed to break this damn thing like so:
+
+(gdb) r $(python -c 'print "A" *20 +"B"*100')
+Starting program: /narnia/narnia8 $(python -c 'print "A" *20 +"B"*100')
+Program received signal SIGSEGV, Segmentation fault.
+0x08048492 in func ()
+
+After a bit more tumbles, the magic payload is:
+
+(gdb) r $(python -c 'print "A" *20 +"B"*68')
+Starting program: /narnia/narnia8 $(python -c 'print "A" *20 +"B"*68')
+Program received signal SIGSEGV, Segmentation fault.
+0x08048492 in func ()
+
+Let's take a look at what's at 0x08048492
+(gdb) disas func
+Dump of assembler code for function func:
+   0x0804842d <+0>:	push   ebp
+   0x0804842e <+1>:	mov    ebp,esp
+   0x08048430 <+3>:	sub    esp,0x38
+   0x08048433 <+6>:	mov    eax,DWORD PTR [ebp+0x8]
+   0x08048436 <+9>:	mov    DWORD PTR [ebp-0xc],eax
+   0x08048439 <+12>:	mov    DWORD PTR [esp+0x8],0x14
+   0x08048441 <+20>:	mov    DWORD PTR [esp+0x4],0x0
+   0x08048449 <+28>:	lea    eax,[ebp-0x20]
+   0x0804844c <+31>:	mov    DWORD PTR [esp],eax
+   0x0804844f <+34>:	call   0x8048320 <memset@plt>
+   0x08048454 <+39>:	mov    DWORD PTR ds:0x80497b8,0x0
+   0x0804845e <+49>:	jmp    0x8048486 <func+89>
+   0x08048460 <+51>:	mov    eax,ds:0x80497b8
+   0x08048465 <+56>:	mov    edx,DWORD PTR ds:0x80497b8
+   0x0804846b <+62>:	mov    ecx,edx
+   0x0804846d <+64>:	mov    edx,DWORD PTR [ebp-0xc]
+   0x08048470 <+67>:	add    edx,ecx
+   0x08048472 <+69>:	movzx  edx,BYTE PTR [edx]
+   0x08048475 <+72>:	mov    BYTE PTR [ebp+eax*1-0x20],dl
+   0x08048479 <+76>:	mov    eax,ds:0x80497b8
+   0x0804847e <+81>:	add    eax,0x1
+   0x08048481 <+84>:	mov    ds:0x80497b8,eax
+   0x08048486 <+89>:	mov    eax,ds:0x80497b8
+   0x0804848b <+94>:	mov    edx,eax
+   0x0804848d <+96>:	mov    eax,DWORD PTR [ebp-0xc]
+   0x08048490 <+99>:	add    eax,edx
+=> 0x08048492 <+101>:	movzx  eax,BYTE PTR [eax]
+   0x08048495 <+104>:	test   al,al
+   0x08048497 <+106>:	jne    0x8048460 <func+51>
+   0x08048499 <+108>:	lea    eax,[ebp-0x20]
+   0x0804849c <+111>:	mov    DWORD PTR [esp+0x4],eax
+   0x080484a0 <+115>:	mov    DWORD PTR [esp],0x8048580
+   0x080484a7 <+122>:	call   0x80482f0 <printf@plt>
+   0x080484ac <+127>:	leave  
+   0x080484ad <+128>:	ret    
+End of assembler dump.
+
+Hmmmm, we're SEGFAULTing in the for loop, there's gotta be something about messy about "bok[i]=blah[i];"
+
