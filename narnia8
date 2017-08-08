@@ -222,7 +222,10 @@ End of assembler dump.
 Hmmmm, we're SEGFAULTing in the for loop, there's gotta be something about messy about "bok[i]=blah[i];"
 Let's see what happens after bok[] is "full"
 
-## Right now *0xffffd69c still points to the correct place (0xffffd89f)
+(gdb) r $(python -c 'print "A" *20 +"B"*68')
+Starting program: /narnia/narnia8 $(python -c 'print "A" *20 +"B"*68')
+Breakpoint 2, 0x08048492 in func ()
+## Did a bunch of continues to fill up das buffer
 (gdb) x/200x $esp
 0xffffd670:	0xffffd688	0x00000000	0x00000014	0xf7e55fe3
 0xffffd680:	0x00000000	0x002c307d	0x41414141	0x41414141
@@ -249,7 +252,7 @@ Let's see what happens after bok[] is "full"
 0xffffd980:	0x36333b31	0x3d686d3a	0x703a3030	0x30343d69
 (gdb) c
 Continuing.
-## Now *0xffffd69c has its last byte overwritten by B
+## Right now *0xffffd69c still points to the correct place (0xffffd89f)
 Breakpoint 2, 0x08048492 in func ()
 (gdb) x/200x $esp
 0xffffd670:	0xffffd688	0x00000000	0x00000014	0xf7e55fe3
@@ -277,7 +280,7 @@ Breakpoint 2, 0x08048492 in func ()
 0xffffd980:	0x36333b31	0x3d686d3a	0x703a3030	0x30343d69
 (gdb) c
 Continuing.
-## Now *0xffffd69c is somehow 0xffffff42 ?!?!? wat? where did that value come from?
+## Now *0xffffd69c has its last byte overwritten by B
 Breakpoint 2, 0x08048492 in func ()
 (gdb) x/200x $esp
 0xffffd670:	0xffffd688	0x00000000	0x00000014	0xf7e55fe3
@@ -308,4 +311,5 @@ Continuing.
 
 Program received signal SIGSEGV, Segmentation fault.
 0x08048492 in func ()
+## Now *0xffffd69c is somehow 0xffffff42 ?!?!? wat? where did that value come from?
 
